@@ -1,6 +1,6 @@
 {
  "name": "Handrail Wizard",
- "short_name": "Handrails",
+ "short_name": "Handrail Wizard",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
