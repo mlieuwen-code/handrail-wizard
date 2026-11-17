@@ -150,7 +150,7 @@ function check(r){
   const out=[],rows=r.rows;
   if(!(r.job||"").trim()||!(r.name||"").trim())out.push("Give the rail a job and a stair name.");
   if(!r.hand)out.push("Pick which hand the rail is on going up.");
-  if(!r.kind)out.push("Pick inside only, or inside and outside.");
+  if(!r.kind)out.push("Pick which rails: inside only, inside and outside, or outside only.");
   if(!rows.length){out.push("No bottom start yet.");return out}
   if(!isEnd(rows[rows.length-1].to))out.push("The rail has no top end yet: on the last flight, pick End of rail.");
   rows.forEach((x,i)=>{const L=x.from+" → "+x.to+" (row "+(i+1)+")";
@@ -252,7 +252,7 @@ function steps(r){
   s.push({id:"job",sec:"Rail",type:"text",q:"Which job?",ph:"Job name",get:()=>r.job,set:v=>r.job=v,chips:true,done:()=>!!(r.job||"").trim(),sum:()=>r.job||"—"});
   s.push({id:"name",sec:"Rail",type:"text",q:"Which stair?",ph:"e.g. North stair",help:"Whatever the shop will know it by.",get:()=>r.name,set:v=>r.name=v,done:()=>!!(r.name||"").trim(),sum:()=>r.name||"—"});
   s.push({id:"hand",sec:"Rail",type:"choice",q:"Standing at the bottom looking up, which side is the rail on?",opts:[{v:"LHU",label:"Left hand",sub:"LH up"},{v:"RHU",label:"Right hand",sub:"RH up"}],cols:2,get:()=>r.hand,set:v=>r.hand=v,done:()=>!!r.hand,sum:()=>r.hand||"—"});
-  s.push({id:"kind",sec:"Rail",type:"choice",q:"Inside rail only, or an outside rail too?",opts:[{v:"inside",label:"Inside only"},{v:"inout",label:"Inside and outside"}],get:()=>r.kind,set:v=>r.kind=v,done:()=>!!r.kind,sum:()=>r.kind==="inout"?"Inside and outside":r.kind?"Inside only":"—"});
+  s.push({id:"kind",sec:"Rail",type:"choice",q:"Which rails?",opts:[{v:"inside",label:"Inside only"},{v:"inout",label:"Inside and outside"},{v:"outside",label:"Outside only",sub:"Measure the outside rail as its own rail"}],get:()=>r.kind,set:v=>r.kind=v,done:()=>!!r.kind,sum:()=>r.kind==="inout"?"Inside and outside":r.kind==="outside"?"Outside only":r.kind?"Inside only":"—"});
   s.push({id:"standoff",sec:"Rail",type:"choice",q:"Standoff, wall to pipe face",help:"Standard is 2 1/8\".",opts:[{v:2.125,label:'2 1/8"',sub:"Standard"},{v:"other",label:"Other"}],cols:2,
     get:()=>r.standoff===2.125?2.125:"other",set:v=>{if(v===2.125)r.standoff=2.125;else{r.standoff=r._so!=null?r._so:null;view.sub="so"}},noAdvance:v=>v==="other",done:()=>r.standoff!=null,sum:()=>frq(r.standoff)});
   s.push({id:"startEnd",sec:"Bottom",type:"choice",q:"What's at the bottom end?",opts:ENDOPT,cols:2,get:()=>w.start.end,set:v=>w.start.end=v,done:()=>!!w.start.end,sum:()=>w.start.end||"—"});
@@ -323,7 +323,7 @@ function home(A){
   if(!jobs.length)A.append(el("div",{class:"card"},el("p",{class:"muted",style:"margin:0",text:"No rails yet. Tap New rail and answer the questions as you walk up the stair. Swipe a rail left to delete it."})));
   jobs.forEach(j=>{const c=el("section",{class:"card"},el("div",{class:"row",style:"justify-content:space-between"},el("h2",{text:j}),j==="(no job)"?null:el("button",{type:"button",class:"btn sm pri",text:"Export job",onclick:()=>exportJob(j)})));
     by[j].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(r=>{normalize(r);const iss=check(r),fl=flights(r).length;
-      const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.hand||"?")+(r.kind==="inout"?" · in + out":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
+      const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.hand||"?")+(r.kind==="inout"?" · in + out":r.kind==="outside"?" · outside only":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
       c.append(swipe(rb,()=>openRail(r),()=>delWithUndo(r)))});
     A.append(c)});
   A.append(el("details",{class:"card"},el("summary",{text:"What the codes mean"}),glossary()));
