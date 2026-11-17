@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#e0661b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Handrails"><link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Handrail Wizard</title>
+<style>
+:root{--bg:#f4f5f7;--card:#ffffff;--ink:#16191d;--muted:#6b7280;--line:#e3e6ea;--soft:#eef0f3;
+--accent:#e0661b;--accent-ink:#fff;--blue:#2563eb;--ok:#15803d;--warn:#92400e;--warnbg:#fef3c7;--bad:#b91c1c;--badbg:#fee2e2;
+--sh:0 1px 2px rgba(16,24,40,.05),0 4px 14px rgba(16,24,40,.06);
+--f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--fd:var(--f);--fb:var(--f);--fn:var(--f);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#eef0f3;--muted:#9aa1ad;--line:#2a2f38;--soft:#21252d;--accent:#f08a45;--accent-ink:#1a0d04;--blue:#60a5fa;--ok:#4ade80;--warn:#fcd34d;--warnbg:#3a2f12;--bad:#fca5a5;--badbg:#3b1a1a;--sh:0 1px 2px rgba(0,0,0,.3);color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--f);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;padding:calc(env(safe-area-inset-top,0px) + 12px) max(14px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(14px,env(safe-area-inset-left,0px))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font:800 30px/1.1 var(--f);letter-spacing:-.02em;margin:0}
+h2{font:700 20px/1.2 var(--f);letter-spacing:-.01em;margin:0}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .08s,background .15s,border-color .15s}
+button:active{transform:scale(.97)}
+.btn{font:600 16px var(--f);border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px 16px;min-height:48px;box-shadow:var(--sh)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 35%,transparent)}
+.btn.sm{font-size:14px;min-height:38px;padding:6px 12px;border-radius:12px}
+.btn.ghost{background:transparent;box-shadow:none;border-color:transparent;color:var(--muted)}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh)}
+.muted{color:var(--muted);font-size:14px}
+.top{display:flex;align-items:center;gap:10px;justify-content:space-between;position:sticky;top:0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:6px 0;z-index:3}
+.prog{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 70%,#fbbf24));border-radius:4px;transition:width .3s}
+.q{font:800 28px/1.15 var(--f);letter-spacing:-.02em;margin:2px 0 0}
+.code{display:inline-block;font:700 15px var(--f);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:4px 10px;border-radius:999px;margin-top:6px}
+.help{color:var(--muted);font-size:16px;margin:6px 0 0}
+.opts{display:grid;gap:10px}
+.opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:16px;padding:16px 18px;min-height:68px;box-shadow:var(--sh)}
+.opt b{font:700 20px var(--f);letter-spacing:-.01em}
+.opt small{color:var(--muted);font-size:14px}
+.opt[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--card))}
+.opts.g2{grid-template-columns:1fr 1fr}.opts.g4{grid-template-columns:repeat(4,1fr)}.opts.g5{grid-template-columns:repeat(5,1fr)}
+.opts.g4 .opt,.opts.g5 .opt{align-items:center;text-align:center;padding:12px 4px}
+input[type=text]{font:500 20px var(--f);padding:14px 16px;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);width:100%;min-height:56px;outline:none}
+input[type=text]:focus{border-color:var(--accent)}
+.disp{font:800 44px var(--f);letter-spacing:-.02em;text-align:center;padding:12px;border:2px solid var(--accent);border-radius:18px;background:var(--card);min-height:80px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh)}
+.disp.empty{color:var(--muted);font-weight:500;font-size:20px;border-style:dashed;border-color:var(--line);box-shadow:none}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kp button{font:600 28px var(--f);min-height:60px;border:0;border-radius:14px;background:var(--card);box-shadow:var(--sh)}
+.kp button.alt{font-size:17px;background:var(--soft);box-shadow:none}
+.kp button.neg[aria-pressed=true]{background:var(--bad);color:#fff}
+.fr{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.fr button{font:600 16px var(--f);min-height:46px;border:0;border-radius:12px;background:var(--soft)}
+.fr button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.lbl{font:700 12px var(--f);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.seg{display:inline-flex;background:var(--soft);border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:8px 14px;min-height:40px;font:600 15px var(--f);color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
+.next{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;gap:8px}
+.next .btn{flex:1;min-height:58px;font-size:18px;border-radius:16px}
+.plan{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:8px;box-shadow:var(--sh)}
+.plan svg{display:block;width:100%;height:150px}
+.plan.big svg{height:240px}
+.warn{background:var(--warnbg);color:var(--warn);border-radius:14px;padding:12px 14px;font-size:15px}
+.bad{background:var(--badbg);color:var(--bad);border-radius:14px;padding:12px 14px;font-size:15px}
+.good{background:color-mix(in srgb,var(--ok) 12%,var(--card));color:var(--ok);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:700}
+.bad ul,.warn ul{margin:4px 0 0;padding-left:18px}
+.rv{display:flex;flex-direction:column;gap:0}
+.rv button{display:flex;justify-content:space-between;gap:10px;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:12px 2px;min-height:48px}
+.rv button:active{transform:none;background:var(--soft)}
+.rv button span:last-child{font-weight:700;white-space:nowrap}
+.rv button.miss span:last-child{color:var(--bad)}
+.rv h3{font:700 12px var(--f);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 2px;color:var(--accent)}
+.rl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;text-align:left;border:0;background:var(--soft);border-radius:14px;padding:12px 14px;width:100%}
+.rl b{font:700 17px var(--f)}
+.rl small{color:var(--muted)}
+.chip{font:700 12px var(--f);border-radius:999px;padding:4px 10px;align-self:start;white-space:nowrap}
+.chip.ok{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}.chip.no{background:var(--badbg);color:var(--bad)}
+.sw{position:relative;border-radius:14px;overflow:hidden;background:var(--bad)}
+.sw .rl{position:relative;z-index:1;touch-action:pan-y;transition:transform .2s}
+.sw.drag .rl{transition:none}
+.sw .del{position:absolute;right:0;top:0;bottom:0;width:96px;border:0;background:var(--bad);color:#fff;font:700 15px var(--f)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9;font-weight:600}
+.toast button{border:0;background:transparent;color:var(--accent);font-weight:800;padding:6px 8px}
+.st{font-size:12px;color:var(--muted)}.st.err{color:var(--bad)}
+.gl{font-size:15px;color:var(--muted);margin:8px 0 0}
+.gl dt{font-weight:800;color:var(--accent);float:left;width:60px}
+.gl dd{margin:0 0 6px 60px}
+details.card summary{font-weight:700;cursor:pointer}
+.mini{display:flex;flex-direction:column;gap:10px;background:var(--card);border-radius:16px;padding:12px;box-shadow:var(--sh)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style></head>
+<body><div class="wrap" id="app"></div>
+<script>
+(function(){"use strict";
+const $=id=>document.getElementById(id);
+const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
+const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
+const uid=()=>"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const nLegs=t=>t===0?1:t===90?2:3;
+const defDir=r=>r.hand==="LHU"?"lt":"rt";
+function fr(v){if(v==null)return"";const neg=v<0;v=Math.abs(v);let w=Math.floor(v+1e-9),n=Math.round((v-w)*16);if(n===16){w++;n=0}let d=16;while(n&&n%2===0){n/=2;d/=2}return(neg?"−":"")+(n?(w?w+" ":"")+n+"/"+d:w)}
+const frq=v=>v==null?"—":fr(v)+'"';
+const NAME={g:"the g (ground under the nose)",bn:"the bottom nose (bn)",tn:"the top nose (tn)",rt:"the turn",lt:"the turn",WR:"the wall (WR)",BP:"the bent post (BP)",CP:"the coped post (CP)",O:"the open end (O)"};
+const ENDOPT=[{v:"WR",label:"WR",sub:"Wall return"},{v:"BP",label:"BP",sub:"Bent post"},{v:"CP",label:"CP",sub:"Coped post"},{v:"O",label:"O",sub:"Open end"}];
+const TURNOPT=[{v:0,label:"Straight",sub:"No turn (0)"},{v:90,label:"One turn",sub:"90"},{v:180,label:"U-turn",sub:"180 (two turns)"}];
+
+/* ================= model =================
+ rail = {id,job,name,hand,kind,standoff,w:{start:{end,turn,legs[]},pipes:[{riser,nn,rise,mids[],after,land:{legs[]}}],end:{turn,code,legs[]}},rows,mp,out}
+ rows/mp are derived from w so the export is the same v3 file as the Field Sheet. */
+function blankW(){return{start:{end:null,turn:null,legs:[]},pipes:[],end:{turn:null,code:null,legs:[]}}}
+function fitLegs(b,t){if(t==null){return}const n=nLegs(t);b.legs=b.legs||[];while(b.legs.length<n)b.legs.push({});b.legs.length=n}
+function newPipe(){return{riser:null,nn:null,rise:null,mids:[],midCount:null,after:null,land:{turn:null,legs:[]}}}
+function normalize(r){
+  const w=r.w;fitLegs(w.start,w.start.turn);
+  if(w.start.end!=null&&w.start.turn!=null&&!w.pipes.length)w.pipes.push(newPipe());
+  for(let p=0;p<w.pipes.length;p++){const P=w.pipes[p];
+    if(P.midCount!=null){while(P.mids.length<P.midCount)P.mids.push({mount:"top"});P.mids.length=P.midCount}
+    if(P.after==null||P.after==="end"){w.pipes.length=p+1;break}
+    fitLegs(P.land,P.after);if(p===w.pipes.length-1)w.pipes.push(newPipe())}
+  const last=w.pipes[w.pipes.length-1];
+  if(last&&last.after==="end")fitLegs(w.end,w.end.turn);
+  derive(r);
+}
+const KEEP=["len","rise","angle","stud","mount","standoff","flange","flangeFace","plateAlong","plateCross","postAdjust"];
+let REFS=[];
+function derive(r){
+  const w=r.w,rows=[],refs=[],D=defDir(r);
+  const block=(from,to,legs)=>{const codes=[from];for(let k=0;k<legs.length-1;k++)codes.push(legs[k].dir||D);codes.push(to);
+    legs.forEach((L,k)=>{const x={from:codes[k],to:codes[k+1]};KEEP.forEach(f=>{if(L[f]!=null)x[f]=L[f]});
+      if(!isTurn(x.to))delete x.angle;if(x.from!=="WR"&&x.to!=="WR")delete x.stud;rows.push(x);refs.push(L)})};
+  if(w.start.end==null||w.start.turn==null){r.rows=rows;r.mp=[];REFS=refs;return}
+  block(w.start.end,"g",w.start.legs);
+  w.pipes.forEach((P,p)=>{
+    rows.push(P.riser==null?{from:"g",to:"bn"}:{from:"g",to:"bn",len:P.riser});refs.push({pipe:p,f:"riser"});
+    const fl={from:"bn",to:"tn"};if(P.nn!=null)fl.len=P.nn;if(P.rise!=null)fl.rise=P.rise;rows.push(fl);refs.push({pipe:p,f:"nn"});
+    if(P.after!=null&&P.after!=="end")block("tn","g",P.land.legs);
+  });
+  const last=w.pipes[w.pipes.length-1];
+  if(last&&last.after==="end"&&w.end.turn!=null&&w.end.code)block("tn",w.end.code,w.end.legs);
+  const mp=[];
+  r.rows=rows;r.mp=mp;REFS=refs;r.layout="cont";
+}
+
+/* ================= checks + export (same rules and v3 shape as the Field Sheet) ================= */
+const postEnd=(rows,i)=>{const x=rows[i];return(i===0&&(x.from==="BP"||x.from==="CP"))||(i===rows.length-1&&(x.to==="BP"||x.to==="CP"))};
+function wrExempt(rows,i){const r=rows[i];if(i===0&&r.from==="WR"&&r.to==="g")return true;if(i===rows.length-1&&r.from==="tn"&&r.to==="WR")return true;
+  if(i===0&&r.from==="WR"&&isTurn(r.to)){const n=rows[1];return!(n&&isTurn(n.from)&&isTurn(n.to))}
+  if(i===rows.length-1&&r.to==="WR"&&isTurn(r.from)){const p=rows[i-1];return!!p&&!(isTurn(p.from)&&isTurn(p.to))}return false}
+function flights(r){const f=[];r.rows.forEach((x,i)=>{if(x.from==="bn"&&x.to==="tn")f.push(i)});return f}
+function check(r){
+  const out=[],rows=r.rows;
+  if(!(r.job||"").trim()||!(r.name||"").trim())out.push("Give the rail a job and a stair name.");
+  if(!r.hand)out.push("Pick which hand the rail is on going up.");
+  if(!r.kind)out.push("Pick inside only, or inside and outside.");
+  if(!rows.length){out.push("No bottom start yet.");return out}
+  if(!isEnd(rows[rows.length-1].to))out.push("The rail has no top end yet: on the last flight, pick End of rail.");
+  rows.forEach((x,i)=>{const L=x.from+" → "+x.to+" (row "+(i+1)+")";
+    if(x.from==="bn"&&x.to==="tn"){if(x.len==null)out.push(L+": n-n missing.");if(x.rise==null)out.push(L+": rise missing.");if(x.len!=null&&x.rise!=null&&!(x.rise>0&&x.rise<x.len))out.push(L+": rise must be more than 0 and less than the n-n.")}
+    else if(x.len==null&&!((x.from==="WR"||x.to==="WR")&&wrExempt(rows,i)))out.push(L+": distance missing.");
+    if(i===rows.length-1&&i>0&&x.from==="tn"&&x.to==="BP"&&x.len!=null&&x.len>=0&&x.len<9)out.push(L+": top post is "+fr(x.len)+'" past the tn. From 0 to under 9 use a CP; a bent post needs 9 or more (or a minus, back on the tread).');
+    if(postEnd(rows,i)&&(x.mount==="fascia"||x.mount==="inside")&&x.standoff==null)out.push(L+": standoff missing for a "+x.mount+" mount.");
+  });
+  const fl=flights(r);(r.mp||[]).forEach((m,i)=>{if(m.fromBn==null||m.dropFromTn==null)out.push("Flight "+m.flight+" mid post: distance or drop missing.");if((m.mount==="fascia"||m.mount==="inside")&&m.standoff==null)out.push("Flight "+m.flight+" mid post: standoff missing.")});
+  for(let f=1;f<=fl.length;f++){const ps=(r.mp||[]).filter(m=>m.flight===f&&m.fromBn!=null&&m.dropFromTn!=null);for(let j=1;j<ps.length;j++)if(!(ps[j].fromBn>ps[j-1].fromBn&&ps[j].dropFromTn<ps[j-1].dropFromTn))out.push("Flight "+f+": mid posts out of order (each next one further up with a smaller drop).")}
+  if(r.kind==="inout")Object.entries(r.out||{}).forEach(([f,o])=>{if(o.mode==="obstruction"&&o.botLen==null&&o.topLen==null)out.push("Outside flight "+f+": enter an end distance or set it back to standard.")});
+  return out;
+}
+function warnings(r){const out=[],fl=[];r.rows.forEach(x=>{if(x.from==="bn"&&x.to==="tn"&&x.len>0&&x.rise>0&&x.rise<x.len)fl.push(Math.asin(x.rise/x.len)*180/Math.PI)});
+  if(fl.length>=3){const s=fl.slice().sort((a,b)=>a-b),med=s[Math.floor(s.length/2)];fl.forEach((a,i)=>{if(Math.abs(a-med)>=.75)out.push("Flight "+(i+1)+" slopes "+a.toFixed(1)+"°, the others about "+med.toFixed(1)+"°. Check its n-n and rise.")})}return out}
+function postOut(m,o){const mount=m.mount||"top";if(mount!=="top")o.mount=mount;
+  if(mount==="top"){if(m.plateAlong)o.plateAlong=m.plateAlong;if(m.plateCross)o.plateCross=m.plateCross}
+  else{if(m.standoff!=null)o.standoff=m.standoff;if(m.flange)o.flange=m.flange;if(m.flange==="SF"&&m.flangeFace)o.flangeFace=m.flangeFace;if(m.postAdjust)o.postAdjust=m.postAdjust}return o}
+function rowOut(x,first,post){const o={from:x.from,to:x.to};["len","rise","angle","h","ms","stud"].forEach(k=>{if(x[k]!=null)o[k]=x[k]});if(post)postOut(x,o);return o}
+function toV3(r){
+  const rail={version:3,id:r.id,job:r.job.trim(),name:r.name.trim(),hand:r.hand,side:"inside",chain:r.rows.map((x,i)=>rowOut(x,i===0,postEnd(r.rows,i)))};
+  if(r.standoff!=null&&r.standoff!==2.125)rail.standoff=r.standoff;
+  const mps=(r.mp||[]).filter(m=>m.fromBn!=null&&m.dropFromTn!=null).map(m=>postOut(m,{flight:m.flight,fromBn:m.fromBn,dropFromTn:m.dropFromTn}));
+  if(mps.length)rail.midPosts=mps;
+  const list=[rail];
+  if(r.kind==="inout")flights(r).forEach((_,k)=>{const f=k+1,o=(r.out||{})[f]||{mode:"standard"};if(o.mode==="none")return;
+    const or={version:3,id:r.id+"-out"+f,job:rail.job,name:rail.name,hand:r.hand==="RHU"?"LHU":"RHU",side:"outside",outsideOf:r.id,flight:f,standard:true};
+    if(o.mode==="obstruction"){if(o.botLen!=null)or.bottom={kind:"obstruction",len:o.botLen,end:o.botEnd||"WR"};if(o.topLen!=null)or.top={kind:"obstruction",len:o.topLen,end:o.topEnd||"WR"};if(or.bottom||or.top)or.standard=false}
+    if(r.standoff!=null&&r.standoff!==2.125)or.standoff=r.standoff;list.push(or)});
+  return list;
+}
+function payload(job){const rs=Object.values(rails).filter(r=>(r.job||"").trim()===job);rs.forEach(derive);return{format:"handrail-capture",version:3,rails:rs.flatMap(toV3)}}
+
+/* ================= plan sketch ================= */
+function plan(r,hl,big){
+  const rows=r.rows,box=el("div",{class:"plan"+(big?" big":"")});if(!rows.length)return null;
+  const NS="http://www.w3.org/2000/svg",S=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+  let x=0,y=0,th=90;const segs=[],pts=[{x,y,c:rows[0].from}];
+  rows.forEach((w,i)=>{const fl=w.from==="bn"&&w.to==="tn";let L,dash=false;
+    if(fl){L=(w.len!=null&&w.rise!=null&&w.rise<w.len)?Math.sqrt(w.len*w.len-w.rise*w.rise):(w.len!=null?w.len*.8:110);if(w.len==null||w.rise==null)dash=true}
+    else if(w.from==="g"&&w.to==="bn")L=0;else if(w.len==null){L=24;dash=true}else L=w.len;
+    if(!fl&&L!==0&&Math.abs(L)<16)L=Math.sign(L)*16;
+    const a=th*Math.PI/180,nx=x+L*Math.cos(a),ny=y+L*Math.sin(a);
+    if(L!==0||i===hl)segs.push({x1:x,y1:y,x2:nx,y2:ny,fl,dash,i});x=nx;y=ny;
+    if(isTurn(w.to)){const ang=w.angle==null?90:w.angle;th+=w.to==="rt"?-ang:ang}pts.push({x,y,c:w.to})});
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const span=Math.max(x1-x0,y1-y0,60),pad=span*.14;x0-=pad;x1+=pad;y0-=pad;y1+=pad;const k=span/300;
+  const svg=S("svg",{viewBox:x0+" "+(-y1)+" "+(x1-x0)+" "+(y1-y0),preserveAspectRatio:"xMidYMid meet",role:"img","aria-label":"Plan of the rail"});
+  segs.forEach(g=>{const on=g.i===hl;svg.append(S("line",{x1:g.x1,y1:-g.y1,x2:g.x2,y2:-g.y2,stroke:on?"var(--accent)":g.fl?"var(--blue)":"var(--ink)","stroke-width":on?7:g.fl?5:2.5,"stroke-linecap":"round","stroke-dasharray":g.dash&&!on?"6 5":"","vector-effect":"non-scaling-stroke",opacity:hl!=null&&!on?.55:1}));
+    if(on&&g.x1===g.x2&&g.y1===g.y2)svg.append(S("circle",{cx:g.x1,cy:-g.y1,r:7*k,fill:"var(--accent)"}))});
+  pts.forEach(p=>{const e=isEnd(p.c),t=isTurn(p.c);if(!e&&!t)return;svg.append(S("circle",{cx:p.x,cy:-p.y,r:(e?4.5:3)*k,fill:e?"var(--accent)":"var(--ink)"}));
+    const tx=S("text",{x:p.x+6*k,y:-p.y-6*k,"font-size":12*k,fill:e?"var(--accent)":"var(--muted)","font-weight":700});tx.textContent=p.c;svg.append(tx)});
+  box.append(svg);return box;
+}
+
+/* ================= ruler keypad ================= */
+function keypad(val,onv,opt){
+  opt=opt||{};const st={neg:val!=null&&val<0,whole:"",six:0};
+  if(val!=null){const a=Math.abs(val);let w=Math.floor(a+1e-9),s=Math.round((a-w)*16);if(s===16){w++;s=0}st.whole=String(w);st.six=s;if(w===0&&s>0)st.whole=""}
+  const disp=el("div",{class:"disp",role:"status","aria-live":"polite"});
+  const value=()=>{if(st.whole===""&&st.six===0)return null;let v=(st.whole===""?0:+st.whole)+st.six/16;return st.neg?-v:v};
+  const fire=()=>{const v=value();disp.className="disp"+(v==null?" empty":"");disp.textContent=v==null?(opt.blank||"Tap the numbers"):frq(v);onv(v);fbtns.forEach((b,i)=>b.setAttribute("aria-pressed",String(i+1===st.six)));if(nb)nb.setAttribute("aria-pressed",String(st.neg))};
+  const dig=d=>{if(st.whole.length>=3)return;st.whole=(st.whole==="0"?"":st.whole)+d;fire()};
+  const back=()=>{if(st.six){st.six=0}else st.whole=st.whole.slice(0,-1);fire()};
+  const kp=el("div",{class:"kp"});
+  [1,2,3,4,5,6,7,8,9].forEach(d=>kp.append(el("button",{type:"button",text:String(d),onclick:()=>dig(String(d))})));
+  const nb=opt.signed?el("button",{type:"button",class:"alt neg","aria-pressed":"false",text:"− minus",onclick:()=>{st.neg=!st.neg;fire()}}):null;
+  kp.append(nb||el("button",{type:"button",class:"alt",text:"Clear",onclick:()=>{st.whole="";st.six=0;st.neg=false;fire()}}),el("button",{type:"button",text:"0",onclick:()=>dig("0")}),el("button",{type:"button",class:"alt","aria-label":"Backspace",text:"⌫",onclick:back}));
+  const FR=["1/16","1/8","3/16","1/4","5/16","3/8","7/16","1/2","9/16","5/8","11/16","3/4","13/16","7/8","15/16"];
+  const fbtns=FR.map((t,i)=>el("button",{type:"button",text:t,"aria-pressed":"false",onclick:()=>{st.six=st.six===i+1?0:i+1;fire()}}));
+  const frg=el("div",{class:"fr"},fbtns,el("button",{type:"button",text:"0/16","aria-label":"No fraction",onclick:()=>{st.six=0;fire()}}));
+  keyHandler=e=>{if(e.target&&e.target.tagName==="INPUT")return;if(/^\d$/.test(e.key)){dig(e.key);e.preventDefault()}else if(e.key==="Backspace"){back();e.preventDefault()}else if(e.key==="-"&&opt.signed){st.neg=!st.neg;fire()}};
+  fire();
+  return el("div",{style:"display:flex;flex-direction:column;gap:10px"},disp,el("div",{class:"lbl",text:"Inches"}),kp,el("div",{class:"lbl",text:"Plus a fraction"}),frg);
+}
+let keyHandler=null;
+addEventListener("keydown",e=>{if(e.key==="Enter"&&view.mode==="wiz"&&!(e.target&&e.target.tagName==="TEXTAREA")){e.preventDefault();goNext();return}if(keyHandler)keyHandler(e)});
+
+/* ================= steps =================
+ Each step: {id, sec, q, help, code, type, ...}. Built fresh from the rail every time so going back and changing a choice reshapes what follows. */
+function legSteps(r,b,from,to,tag,sec,P){
+  const out=[],D=defDir(r);derive(r);
+  b.legs.forEach((L,k)=>{
+    const a=k===0?from:(b.legs[k-1].dir||D),z=k===b.legs.length-1?to:(L.dir||D);
+    out.push({id:tag+":"+k,sec,type:"num",code:a+" → "+z,ref:L,
+      q:isTurn(a)&&isTurn(z)?"Distance between the turns":"Distance",help:isTurn(a)&&isTurn(z)?"Turn to turn. On a switchback this is usually the wall thickness.":isTurn(a)&&z==="g"?"From the wall to the bottom tread, under the nose (g).":a==="tn"&&isTurn(z)?"From the top nose (tn) to the wall.":"From "+NAME[a]+" to "+NAME[z]+".",
+      get:()=>L.len,set:v=>{if(v==null)delete L.len;else L.len=v},signed:true,
+      skip:(a==="WR"||z==="WR")?"No obstruction (blank)":null,
+      turn:isTurn(z)?L:null,wr:(a==="WR"||z==="WR")?L:null,
+      done:()=>L.len!=null||(a==="WR"||z==="WR"),
+      endHere:P?()=>{const w=r.w;P.after="end";w.end.turn=[0,90,180][k];w.end.legs=b.legs.slice(0,k+1).map(x=>Object.assign({},x));w.end.code=null;save(r);jump("endCode",true)}:null,
+      sum:()=>frq(L.len)+(isTurn(z)?" · then "+(L.dir||D)+(L.angle!=null?" "+L.angle+"°":""):"")});
+  });return out;
+}
+function postStep(id,sec,obj,code,where){return{id,sec,type:"post",obj,q:"How is the "+code+" mounted?",help:where,done:()=>(obj.mount||"top")==="top"||obj.standoff!=null,
+  sum:()=>{const m=obj.mount||"top";return m==="top"?"Top":m+(obj.standoff!=null?" · "+frq(obj.standoff):"")+(obj.flange?" · "+obj.flange:"")}}}
+function steps(r){
+  normalize(r);const w=r.w,s=[];
+  s.push({id:"job",sec:"Rail",type:"text",q:"Which job?",ph:"Job name",get:()=>r.job,set:v=>r.job=v,chips:true,done:()=>!!(r.job||"").trim(),sum:()=>r.job||"—"});
+  s.push({id:"name",sec:"Rail",type:"text",q:"Which stair?",ph:"e.g. North stair",help:"Whatever the shop will know it by.",get:()=>r.name,set:v=>r.name=v,done:()=>!!(r.name||"").trim(),sum:()=>r.name||"—"});
+  s.push({id:"hand",sec:"Rail",type:"choice",q:"Standing at the bottom looking up, which side is the rail on?",opts:[{v:"LHU",label:"Left hand",sub:"LH up"},{v:"RHU",label:"Right hand",sub:"RH up"}],cols:2,get:()=>r.hand,set:v=>r.hand=v,done:()=>!!r.hand,sum:()=>r.hand||"—"});
+  s.push({id:"kind",sec:"Rail",type:"choice",q:"Inside rail only, or an outside rail too?",opts:[{v:"inside",label:"Inside only"},{v:"inout",label:"Inside and outside"}],get:()=>r.kind,set:v=>r.kind=v,done:()=>!!r.kind,sum:()=>r.kind==="inout"?"Inside and outside":r.kind?"Inside only":"—"});
+  s.push({id:"standoff",sec:"Rail",type:"choice",q:"Standoff, wall to pipe face",help:"Standard is 2 1/8\".",opts:[{v:2.125,label:'2 1/8"',sub:"Standard"},{v:"other",label:"Other"}],cols:2,
+    get:()=>r.standoff===2.125?2.125:"other",set:v=>{if(v===2.125)r.standoff=2.125;else{r.standoff=r._so!=null?r._so:null;view.sub="so"}},noAdvance:v=>v==="other",done:()=>r.standoff!=null,sum:()=>frq(r.standoff)});
+  s.push({id:"startEnd",sec:"Bottom",type:"choice",q:"What's at the bottom end?",opts:ENDOPT,cols:2,get:()=>w.start.end,set:v=>w.start.end=v,done:()=>!!w.start.end,sum:()=>w.start.end||"—"});
+  if(!w.start.end)return s.concat(rev());
+  s.push({id:"startTurn",sec:"Bottom",type:"choice",q:"From the "+w.start.end+" to the foot of the stair, does the rail turn?",opts:TURNOPT,get:()=>w.start.turn,set:v=>w.start.turn=v,done:()=>w.start.turn!=null,sum:()=>w.start.turn==null?"—":TURNOPT.find(o=>o.v===w.start.turn).label});
+  if(w.start.turn==null)return s.concat(rev());
+  normalize(r);
+  s.push(...legSteps(r,w.start,w.start.end,"g","s","Bottom"));
+  if(w.start.end==="BP"||w.start.end==="CP")s.push(postStep("post:s","Bottom",w.start.legs[0],w.start.end,"Bottom post."));
+  w.pipes.forEach((P,p)=>{const F="Flight "+(p+1);
+    s.push({id:"riser:"+p,sec:F,type:"num",code:"g → bn",q:"Bottom tread height",help:"Height of the bottom tread: ground under the nose (g) up to the bottom nose (bn).",ref:{pipe:p,f:"riser"},get:()=>P.riser,set:v=>P.riser=v,done:()=>P.riser!=null,sum:()=>frq(P.riser)});
+    s.push({id:"nn:"+p,sec:F,type:"num",code:"bn → tn",q:"n-n",help:"Along the noses, bottom nose to top nose.",ref:{pipe:p,f:"nn"},get:()=>P.nn,set:v=>P.nn=v,done:()=>P.nn!=null,sum:()=>frq(P.nn)});
+    s.push({id:"rise:"+p,sec:F,type:"num",code:"bn → tn",q:"Rise",help:"Straight up, bottom nose to top nose.",ref:{pipe:p,f:"nn"},get:()=>P.rise,set:v=>P.rise=v,done:()=>P.rise!=null,
+      warn:()=>P.rise!=null&&P.nn!=null&&!(P.rise>0&&P.rise<P.nn)?"Rise must be less than the n-n ("+frq(P.nn)+"). Check both.":null,sum:()=>frq(P.rise)});
+    s.push({id:"after:"+p,sec:F,type:"choice",q:"At the top of flight "+(p+1)+", what happens?",opts:[{v:"end",label:"End of rail",sub:"No more flights"},{v:180,label:"U-turn landing",sub:"180, then another flight"},{v:90,label:"Corner landing",sub:"90, then another flight"},{v:0,label:"Straight landing",sub:"0, then another flight"}],
+      get:()=>P.after,set:v=>P.after=v,done:()=>P.after!=null,sum:()=>P.after==null?"—":P.after==="end"?"End of rail":P.after===180?"U-turn landing":P.after===90?"Corner landing":"Straight landing"});
+    if(P.after!=null&&P.after!=="end"){normalize(r);s.push(...legSteps(r,P.land,"tn","g","l"+p,"Landing "+(p+1),P))}
+    if(r.kind==="inout"&&P.after!=null)s.push(...outSteps(r,p+1));
+  });
+  const last=w.pipes[w.pipes.length-1];
+  if(last&&last.after==="end"){
+    s.push({id:"endTurn",sec:"Top",type:"choice",q:"From the top nose to the end, does the rail turn?",opts:TURNOPT,get:()=>w.end.turn,set:v=>w.end.turn=v,done:()=>w.end.turn!=null,sum:()=>w.end.turn==null?"—":TURNOPT.find(o=>o.v===w.end.turn).label});
+    if(w.end.turn!=null){
+      s.push({id:"endCode",sec:"Top",type:"choice",q:"What's at the top end?",opts:ENDOPT,cols:2,get:()=>w.end.code,set:v=>w.end.code=v,done:()=>!!w.end.code,sum:()=>w.end.code||"—"});
+      if(w.end.code){normalize(r);s.push(...legSteps(r,w.end,"tn",w.end.code,"e","Top"));
+        if(w.end.code==="BP"||w.end.code==="CP")s.push(postStep("post:e","Top",w.end.legs[w.end.legs.length-1],w.end.code,"Top post."))}
+    }
+  }
+  return s.concat(rev());
+}
+function outSteps(r,f){r.out=r.out||{};const o=r.out[f]=r.out[f]||{mode:null};const s=[],F="Outside "+f;
+  s.push({id:"out:"+f,sec:F,type:"choice",q:"Outside rail on flight "+f+"?",help:"Standard uses this flight's riser, n-n and rise: 12 level, 90 and WR at both ends.",opts:[{v:"standard",label:"Standard"},{v:"obstruction",label:"Something in the way",sub:"Enter the blocked end"},{v:"none",label:"No outside rail here"}],
+    get:()=>o.mode,set:v=>o.mode=v,done:()=>!!o.mode,sum:()=>o.mode==="obstruction"?"End distance":o.mode==="none"?"None":o.mode?"Standard":"—"});
+  if(o.mode==="obstruction"){
+    s.push({id:"ob:"+f,sec:F,type:"num",code:"end → g",q:"Bottom: end to g",help:"Leave blank if the bottom is standard.",signed:true,skip:"Bottom is standard",get:()=>o.botLen,set:v=>o.botLen=v==null?undefined:v,ends:["botEnd",o],done:()=>true,sum:()=>o.botLen==null?"Standard":frq(o.botLen)+" · "+(o.botEnd||"WR")});
+    s.push({id:"ot:"+f,sec:F,type:"num",code:"tn → end",q:"Top: tn to end",help:"Leave blank if the top is standard.",signed:true,skip:"Top is standard",get:()=>o.topLen,set:v=>o.topLen=v==null?undefined:v,ends:["topEnd",o],done:()=>true,sum:()=>o.topLen==null?"Standard":frq(o.topLen)+" · "+(o.topEnd||"WR")});
+  }return s}
+const rev=()=>[{id:"review",sec:"Done",type:"review",q:"Check and export",done:()=>true}];
+
+/* ================= storage ================= */
+let rails={},db=null,me=null,timers={},dirty={},busy={},noWrite=false,status="";
+const LS="handrailWizard.v1";
+function lsLoad(){try{const o=JSON.parse(localStorage.getItem(LS)||"{}");Object.values(o).forEach(r=>{if(r&&r.id)rails[r.id]=r})}catch(e){}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(rails))}catch(e){}}
+const clean=r=>JSON.parse(JSON.stringify(r,(k,v)=>k.startsWith("_")?undefined:v));
+function save(r){derive(r);r.updatedAt=new Date().toISOString();if(me)r.updatedBy=me;lsSave();dirty[r.id]=true;setSt("saving…");clearTimeout(timers[r.id]);timers[r.id]=setTimeout(()=>flush(r.id),700)}
+async function flush(id){clearTimeout(timers[id]);if(!dirty[id])return;
+  if(!db||noWrite){setSt(db?"saved on this device only":"saved on this device");return}
+  if(busy[id]){timers[id]=setTimeout(()=>flush(id),500);return}
+  const r=rails[id];delete dirty[id];if(!r)return;busy[id]=true;
+  try{await db.doc("rails/"+id).set(clean(r));setSt("saved")}
+  catch(e){dirty[id]=true;const c=e&&e.code;if(["not_granted","revoked","capability_disabled","invalid_argument"].includes(c)){noWrite=true;setSt("saved on this device only","err")}else{setSt("no signal: kept on this device, retrying…","err");timers[id]=setTimeout(()=>flush(id),5000)}}
+  busy[id]=false}
+const flushAll=()=>Object.keys(dirty).forEach(flush);
+addEventListener("online",flushAll);addEventListener("pagehide",flushAll);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushAll()});
+function setSt(t,c){status=t;const s=$("st");if(s){s.textContent=t;s.className="st"+(c?" "+c:"")}}
+async function removeRail(id){delete rails[id];delete dirty[id];lsSave();try{db&&await db.doc("rails/"+id).delete()}catch(e){}}
+
+/* ================= views ================= */
+const view={mode:"home",rail:null,i:0,sub:null,ret:false};
+function render(){keyHandler=null;const A=$("app");A.innerHTML="";if(view.mode==="wiz"&&rails[view.rail])wizard(A,rails[view.rail]);else{view.mode="home";home(A)}}
+function home(A){
+  A.append(el("div",null,el("h1",{text:"Handrail wizard"}),el("p",{class:"muted",style:"margin:2px 0 0",text:"One question at a time, bottom of the stair up. Rails save on this phone; Export job shares the handrail builder's v3 JSON."})));
+  A.append(el("div",{class:"row"},el("button",{type:"button",class:"btn pri",style:"flex:1",text:"+ New rail",onclick:newRail}),el("span",{class:"st",id:"st",text:status})));
+  const by={};Object.values(rails).forEach(r=>{const j=(r.job||"").trim()||"(no job)";(by[j]=by[j]||[]).push(r)});
+  const jobs=Object.keys(by).sort();
+  if(!jobs.length)A.append(el("div",{class:"card"},el("p",{class:"muted",style:"margin:0",text:"No rails yet. Tap New rail and answer the questions as you walk up the stair. Swipe a rail left to delete it."})));
+  jobs.forEach(j=>{const c=el("section",{class:"card"},el("div",{class:"row",style:"justify-content:space-between"},el("h2",{text:j}),j==="(no job)"?null:el("button",{type:"button",class:"btn sm pri",text:"Export job",onclick:()=>exportJob(j)})));
+    by[j].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(r=>{normalize(r);const iss=check(r),fl=flights(r).length;
+      const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.hand||"?")+(r.kind==="inout"?" · in + out":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
+      c.append(swipe(rb,()=>openRail(r),()=>delWithUndo(r)))});
+    A.append(c)});
+  A.append(el("details",{class:"card"},el("summary",{text:"What the codes mean"}),glossary()));
+}
+/* swipe left on a rail to show Delete */
+let openSw=null;
+function swipe(card,onOpen,onDel){
+  const wrap=el("div",{class:"sw"},el("button",{type:"button",class:"del",text:"Delete",onclick:onDel}),card);
+  let x0=null,y0=0,dx=0,base=0,moved=false,lock=null;const W=96;
+  const set=v=>{card.style.transform="translateX("+v+"px)"};
+  const close=()=>{set(0);base=0;if(openSw===close)openSw=null};
+  card.addEventListener("pointerdown",e=>{if(openSw&&openSw!==close)openSw();x0=e.clientX;y0=e.clientY;dx=0;moved=false;lock=null});
+  card.addEventListener("pointermove",e=>{if(x0==null)return;const mx=e.clientX-x0,my=e.clientY-y0;
+    if(lock==null&&(Math.abs(mx)>8||Math.abs(my)>8))lock=Math.abs(mx)>Math.abs(my)?"x":"y";
+    if(lock!=="x")return;moved=true;wrap.classList.add("drag");try{card.setPointerCapture(e.pointerId)}catch(_){}
+    dx=Math.max(-W*1.4,Math.min(0,base+mx));set(dx)});
+  const up=()=>{if(x0==null)return;x0=null;wrap.classList.remove("drag");if(!moved)return;
+    if(dx<-W*1.25){onDel();return}
+    if(dx<-W/2){set(-W);base=-W;openSw=close}else close()};
+  card.addEventListener("pointerup",up);card.addEventListener("pointercancel",up);
+  card.addEventListener("click",e=>{if(moved){moved=false;return}if(base){close();return}onOpen()});
+  return wrap;
+}
+let undoT=null;
+function delWithUndo(r){const copy=JSON.parse(JSON.stringify(r));openSw=null;removeRail(r.id);render();
+  document.querySelectorAll(".toast").forEach(t=>t.remove());clearTimeout(undoT);
+  const t=el("div",{class:"toast",role:"status"},"Deleted "+((r.name||"rail")),el("button",{type:"button",text:"Undo",onclick:()=>{rails[copy.id]=copy;save(copy);t.remove();render()}}));
+  document.body.append(t);undoT=setTimeout(()=>t.remove(),6000)}
+function glossary(){return el("dl",{class:"gl"},[["WR","Wall return"],["BP","Bent post"],["CP","Coped post"],["O","Open end"],["g","Ground under the nose of the stair"],["bn","Bottom nose of a flight"],["tn","Top nose of a flight"],["n-n","Along the noses, bn to tn"],["rt / lt","Turn right / left, standing on the stair looking up"]].map(([a,b])=>[el("dt",{text:a}),el("dd",{text:b})]))}
+function newRail(){const last=Object.values(rails).sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""))[0];
+  const r={id:uid(),job:last?last.job:"",name:"",hand:null,kind:null,layout:"cont",standoff:2.125,w:blankW(),rows:[],mp:[],out:{},createdBy:me,createdAt:new Date().toISOString()};
+  rails[r.id]=r;save(r);view.mode="wiz";view.rail=r.id;view.i=0;view.sub=null;render();scrollTo(0,0)}
+function openRail(r){if(!r.w)r.w=blankW();const S=steps(r);let i=S.findIndex(s=>!s.done());if(i<0)i=S.length-1;view.mode="wiz";view.rail=r.id;view.i=i;view.sub=null;view.ret=false;render();scrollTo(0,0)}
+function goNext(){const r=rails[view.rail];if(!r)return;const S=steps(r);
+  if(view.ret){view.ret=false;view.i=S.length-1}else view.i=Math.min(view.i+1,S.length-1);view.sub=null;save(r);render();scrollTo(0,0)}
+function goBack(){const r=rails[view.rail];if(view.sub){view.sub=null;render();return}if(view.i===0){view.mode="home";save(r);render();return}view.i--;view.ret=false;render();scrollTo(0,0)}
+function jump(id,fwd){const r=rails[view.rail],S=steps(r),i=S.findIndex(s=>s.id===id);if(i>=0){view.i=i;view.ret=!fwd;view.sub=null;render();scrollTo(0,0)}}
+
+function wizard(A,r){
+  const S=steps(r);if(view.i>=S.length)view.i=S.length-1;const st=S[view.i];
+  const doneN=S.filter(s=>s.done()).length;
+  A.append(el("div",{class:"top"},el("button",{type:"button",class:"btn sm",text:"‹ Back",onclick:goBack}),el("div",{class:"prog","aria-label":"Progress"},el("i",{style:"width:"+Math.round(100*doneN/S.length)+"%"})),
+    el("button",{type:"button",class:"btn sm",text:st.type==="review"?"All rails":"Review",onclick:()=>{if(st.type==="review"){save(r);view.mode="home";render()}else jump("review")}})));
+  const head=el("div",null,el("div",{class:"lbl",text:(r.name?r.name+" · ":"")+st.sec}));
+  if(st.type==="review"){reviewView(A,r,S,head);return}
+  derive(r);
+  let hl=null;if(st.ref){hl=REFS.findIndex(x=>x===st.ref||(x&&st.ref&&x.pipe!=null&&x.pipe===st.ref.pipe&&x.f===st.ref.f))}
+  if(r.rows.length&&st.sec!=="Rail"){const p=plan(r,hl>=0?hl:null);if(p)A.append(p)}
+  if(st.code)head.append(el("div",{class:"code",text:st.code}));
+  head.append(el("h2",{class:"q",text:st.q}));if(st.help)head.append(el("p",{class:"help",text:st.help}));
+  A.append(head);
+  const body=el("div",{style:"display:flex;flex-direction:column;gap:12px"});A.append(body);
+  const nextBar=el("div",{class:"next"});
+  const nextBtn=el("button",{type:"button",class:"btn pri",text:view.ret?"Back to review":"Next ›",onclick:goNext});
+  const upd=()=>{const blank=st.type==="num"&&st.get()==null;nextBtn.textContent=view.ret?"Back to review":blank?(st.skip?"Leave blank ›":"Skip for now ›"):"Next ›";const wv=st.warn&&st.warn();const wb=$("wb");if(wb){wb.hidden=!wv;wb.textContent=wv||""}};
+
+  if(st.type==="text"){
+    const inp=el("input",{type:"text",value:st.get()||"",placeholder:st.ph,autocomplete:"off",oninput:e=>{st.set(e.target.value);save(r)}});body.append(inp);
+    if(st.chips){const js=[...new Set(Object.values(rails).map(x=>(x.job||"").trim()).filter(Boolean))].sort();if(js.length)body.append(el("div",{class:"row"},el("span",{class:"muted",text:"Recent:"}),js.map(j=>el("button",{type:"button",class:"btn sm",text:j,onclick:()=>{st.set(j);save(r);goNext()}}))))}
+    setTimeout(()=>inp.focus(),50);
+  }
+  if(st.type==="choice"){
+    if(view.sub==="so"){body.append(keypad(r.standoff,v=>{r.standoff=v;r._so=v;save(r);upd()},{}));}
+    else{const g=el("div",{class:"opts"+(st.cols?" g"+st.cols:"")}),cur=st.get();
+      st.opts.forEach(o=>g.append(el("button",{type:"button",class:"opt","aria-pressed":String(cur===o.v),onclick:()=>{st.set(o.v);save(r);if(st.noAdvance&&st.noAdvance(o.v)){render();return}goNext()}},el("b",{text:o.label}),o.sub?el("small",{text:o.sub}):null)));
+      body.append(g);
+      if(st.id==="standoff"&&r.standoff!==2.125&&r.standoff!=null)body.append(el("p",{class:"muted",text:"Now: "+frq(r.standoff)}));}
+  }
+  if(st.type==="num"){
+    body.append(el("div",{id:"wb",class:"warn",hidden:true}));
+    body.append(keypad(st.get(),v=>{st.set(v);save(r);upd()},{signed:st.signed,blank:st.skip?"Blank = "+st.skip.toLowerCase():null}));
+    if(st.turn){const L=st.turn,D=defDir(r);const box=el("div",{class:"mini"});
+      const draw=()=>{box.innerHTML="";const dir=L.dir||D;
+        box.append(el("div",{class:"row"},el("span",{class:"lbl",text:"Then it turns"}),seg([["lt","◀ Left (lt)"],["rt","Right (rt) ▶"]],dir,v=>{if(v===D)delete L.dir;else L.dir=v;save(r);render()})));
+        const sq=L.angle==null;
+        box.append(el("div",{class:"row"},el("span",{class:"lbl",text:"Corner"}),seg([[true,"Square"],[false,"Not square"]],sq&&!L._ns,v=>{if(v){delete L.angle;delete L._ns}else L._ns=true;save(r);draw()})));
+        if(!sq||L._ns){const inp=el("input",{type:"text",inputmode:"decimal",placeholder:"Protractor reading, e.g. 135",value:L.angle==null?"":String(Math.round((180-L.angle)*10)/10),
+          oninput:e=>{const v=parseFloat(e.target.value);if(v>0&&v<=180){const t=Math.round((180-v)*10)/10;if(t===90)delete L.angle;else L.angle=t;msg.textContent="turn "+t+"°"}else{msg.textContent="reading between the walls: 180 = straight on, 90 = square"}save(r)}});
+          const msg=el("span",{class:"muted",text:L.angle!=null?"turn "+L.angle+"°":"reading between the walls: 180 = straight on, 90 = square"});box.append(inp,msg)}};
+      draw();body.append(box)}
+    if(st.wr){const L=st.wr;body.append(el("div",{class:"mini"},el("div",{class:"row"},el("span",{class:"lbl",text:"Studs o.c."}),seg([[12,"12"],[16,"16"],[24,"24"]],L.stud==null?16:L.stud,v=>{if(v===16)delete L.stud;else L.stud=v;save(r);render()}))))}
+    if(st.endHere)body.append(el("button",{type:"button",class:"btn",style:"border-style:dashed",text:"Rail ends here instead ›",onclick:st.endHere}));
+    if(st.ends){const[k,o]=st.ends;body.append(el("div",{class:"mini"},el("div",{class:"row"},el("span",{class:"lbl",text:"End code"}),seg(ENDS.map(c=>[c,c]),o[k]||"WR",v=>{o[k]=v;save(r);render()}))))}
+  }
+  if(st.type==="post"){const m=st.obj;const mount=m.mount||"top";
+    const g=el("div",{class:"opts g2"});[["top","Top mount"],["fascia","Fascia"],["inside","Inside"]].forEach(([v,t])=>g.append(el("button",{type:"button",class:"opt","aria-pressed":String(mount===v),onclick:()=>{m.mount=v;if(v==="top"){delete m.standoff;delete m.flange;delete m.flangeFace;delete m.postAdjust}save(r);if(v==="top")goNext();else render()}},el("b",{text:t}))));
+    body.append(g);
+    if(mount!=="top"){
+      body.append(el("div",{class:"row"},el("span",{class:"lbl",text:"Flange"}),seg([["SF","Single (SF)"],["DF","Double (DF)"]],m.flange||"",v=>{m.flange=v;if(v!=="SF")delete m.flangeFace;save(r);render()})));
+      if(m.flange==="SF")body.append(el("div",{class:"row"},el("span",{class:"lbl",text:"Flange on"}),seg([["uphill","Uphill face"],["downhill","Downhill face"]],m.flangeFace||"",v=>{m.flangeFace=v;save(r);render()})));
+      body.append(el("div",{class:"lbl",text:"Standoff"}),keypad(m.standoff,v=>{if(v==null)delete m.standoff;else m.standoff=v;save(r)},{}));
+    }
+  }
+  if(st.type!=="choice"||view.sub||view.ret||st.get()!=null){nextBar.append(nextBtn);A.append(nextBar)}
+  upd();
+}
+function seg(opts,cur,on){const s=el("div",{class:"seg",role:"group"});opts.forEach(([v,t])=>s.append(el("button",{type:"button","aria-pressed":String(cur===v),text:t,onclick:()=>on(v)})));return s}
+
+function reviewView(A,r,S,head){
+  head.append(el("h2",{class:"q",text:(r.job||"")+(r.name?" · "+r.name:"")}));A.append(head);
+  const p=plan(r,null,true);if(p)A.append(p);
+  const iss=check(r),ws=warnings(r);
+  A.append(iss.length?el("div",{class:"bad"},el("b",{text:"To fix before export"}),el("ul",null,iss.map(t=>el("li",{text:t})))):el("div",{class:"good",text:"Ready to export"}));
+  if(ws.length)A.append(el("div",{class:"warn"},el("b",{text:"Check (won't stop export)"}),el("ul",null,ws.map(t=>el("li",{text:t})))));
+  const firstMiss=S.findIndex(s=>s.type!=="review"&&!s.done());
+  if(firstMiss>=0)A.append(el("button",{type:"button",class:"btn",text:"Go to the first blank ›",onclick:()=>{view.i=firstMiss;view.ret=false;render();scrollTo(0,0)}}));
+  const list=el("div",{class:"card rv"},el("div",{class:"muted",text:"Tap anything to change it."}));let sec=null;
+  S.forEach(s=>{if(s.type==="review")return;if(s.sec!==sec){sec=s.sec;list.append(el("h3",{text:sec}))}
+    const lab=s.lab||(s.code&&s.type==="num"?s.code+" "+(s.q.startsWith("Distance")?"":s.q):s.id==="job"?"Job":s.id==="name"?"Stair":s.id==="hand"?"Hand up":s.id==="kind"?"Rails":s.id==="standoff"?"Standoff":s.q);
+    list.append(el("button",{type:"button",class:s.done()?"":"miss",onclick:()=>jump(s.id)},el("span",{text:lab}),el("span",{text:s.sum?s.sum():String(s.get()??"—")})))});
+  A.append(list);
+  A.append(el("div",{class:"next"},el("button",{type:"button",class:"btn pri",text:"Export "+(r.job||"job")+" JSON",disabled:!(r.job||"").trim(),onclick:()=>exportJob(r.job.trim())})));
+  A.append(el("div",{class:"row"},el("span",{class:"st",id:"st",text:status}),el("button",{type:"button",class:"btn sm ghost",text:"Copy JSON",onclick:()=>copyJob(r.job.trim())})));
+  const del=el("div",{class:"row"});const sd=()=>{del.innerHTML="";del.append(el("button",{type:"button",class:"btn sm ghost",text:"Delete this rail",onclick:()=>{del.innerHTML="";del.append(el("span",{class:"muted",text:"Delete it?"}),el("button",{type:"button",class:"btn sm",text:"Delete",onclick:async()=>{await removeRail(r.id);view.mode="home";render()}}),el("button",{type:"button",class:"btn sm",text:"Keep",onclick:sd}))}}))};sd();A.append(del);
+}
+async function exportJob(job){
+  const p=payload(job),bad=Object.values(rails).filter(r=>(r.job||"").trim()===job&&check(r).length).length;
+  const fname=job.replace(/[^\w\- ]+/g,"").trim()+" handrails v3.json",data=JSON.stringify(p,null,1);
+  const note=bad?" · "+bad+" rail(s) still have issues":"";
+  try{const f=new File([data],fname,{type:"application/json"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:fname});setSt("shared "+fname+note);return}}
+  catch(e){if(e&&e.name==="AbortError")return}
+  const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));const a=el("a",{href:url,download:fname});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);setSt("downloaded "+fname+note)
+}
+async function copyJob(job){try{await navigator.clipboard.writeText(JSON.stringify(payload(job),null,1));setSt("JSON copied")}catch(e){setSt("couldn't copy","err")}}
+
+/* ================= boot ================= */
+lsLoad();Object.values(rails).forEach(r=>{if(!r.w)r.w=blankW()});render();
+setSt("saved on this phone");
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+window.__t={rails,steps,toV3,derive,normalize,check,blankW,payload};
+})();
+</script></body></html>
