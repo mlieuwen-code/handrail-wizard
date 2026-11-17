@@ -86,8 +86,13 @@ input[type=text]:focus{border-color:var(--accent)}
 .ver button{border:0;background:transparent;color:var(--accent);font-weight:700;padding:6px}
 .st{font-size:12px;color:var(--muted)}.st.err{color:var(--bad)}
 .gl{font-size:15px;color:var(--muted);margin:8px 0 0}
-.gl dt{font-weight:800;color:var(--accent);float:left;width:60px}
-.gl dd{margin:0 0 6px 60px}
+.gl h4{font:700 12px var(--f);text-transform:uppercase;letter-spacing:.08em;color:var(--ink);margin:14px 0 6px}
+.gl dl{margin:0}
+.gl dt{font-weight:800;color:var(--accent)}
+.gl dd{margin:0 0 8px}
+.gsheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.gpanel{background:var(--bg);width:100%;max-width:560px;max-height:85vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 20px)}
+.next .btn.codes{flex:0 0 auto;font-size:15px;padding:10px 14px}
 details.card summary{font-weight:700;cursor:pointer}
 .mini{display:flex;flex-direction:column;gap:10px;background:var(--card);border-radius:16px;padding:12px;box-shadow:var(--sh)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -95,7 +100,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
-const APP_VERSION="2026.11.17-0608ac";
+const APP_VERSION="2026.11.17-f15c5c";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -358,7 +363,19 @@ function delWithUndo(r){const copy=JSON.parse(JSON.stringify(r));openSw=null;rem
   document.querySelectorAll(".toast").forEach(t=>t.remove());clearTimeout(undoT);
   const t=el("div",{class:"toast",role:"status"},"Deleted "+((r.name||"rail")),el("button",{type:"button",text:"Undo",onclick:()=>{rails[copy.id]=copy;save(copy);t.remove();render()}}));
   document.body.append(t);undoT=setTimeout(()=>t.remove(),6000)}
-function glossary(){return el("dl",{class:"gl"},[["WR","Wall return"],["BP","Bent post"],["CP","Coped post"],["O","Open end"],["g","Ground under the nose of the stair"],["bn","Bottom nose of a flight"],["tn","Top nose of a flight"],["n-n","Along the noses, bn to tn"],["rt / lt","Turn right / left, standing on the stair looking up"]].map(([a,b])=>[el("dt",{text:a}),el("dd",{text:b})]))}
+const GLOSS=[
+ ["End codes",[["WR","Wall return. The rail turns into the wall and mounts to it."],["BP","Bent post. Needs 9\" or more past the tn (or a minus, back on the tread)."],["CP","Coped post. Use instead of a BP when the post is from 0 to under 9\" past the tn."],["O","Open end. The rail just stops."]]],
+ ["Points on the stair",[["g","Ground under the nose: the floor or landing right below the bottom nose of a flight."],["bn","Bottom nose: the nose of the first tread of a flight."],["tn","Top nose: the nose of the landing or floor at the top of a flight."],["Nose line","Straight line touching every tread nose. The rail runs 36\" above it."]]],
+ ["Measurements",[["Bottom tread height","g to bn: plumb, from the ground under the nose up to the bottom nose."],["n-n","Nose to nose: along the nose line, from the bn to the tn (tape laid on the noses)."],["Rise","Plumb height of the flight, from the bn straight up to the level of the tn."],["Run","Level distance of the flight, from the bn straight across to below the tn. Not entered; the builder works it out from the n-n and rise."],["Wall to g","rt → g / lt → g: from the wall to the bottom tread, under the nose."],["tn to wall","tn → rt / tn → lt: from the top nose to the wall."],["Between turns","rt → rt / lt → lt: turn to turn. On a switchback this is usually the wall thickness."],["Standoff","Wall to the face of the pipe. Standard is 2 1/8\"."],["Minus (−)","A distance going backwards, like a post set back on the tread instead of past the tn."],["Blank","Leaving a WR distance blank means no obstruction; the builder sets it."]]],
+ ["Turns and landings",[["rt / lt","Turn right / left, standing on the stair looking up."],["LH up / RH up","Which hand the rail is on, standing at the bottom looking up."],["Square","A 90° corner."],["Protractor","Reading between the two walls: 180 = straight on, 90 = square."],["U-turn landing","180: two turns, the next flight comes back the other way (switchback)."],["Corner landing","90: one turn, the next flight goes off to the side."],["Straight landing","0: no turn, the next flight carries straight on."],["Studs o.c.","Stud spacing behind a wall return: 12, 16 (standard) or 24 on centre."]]],
+ ["Posts",[["Top mount","Post stands on top of the tread or slab on a baseplate."],["Fascia","Post bolts to the face of the stringer or slab edge."],["Inside","Post mounts on the inside face."],["SF / DF","Single flange / double flange bracket."],["Uphill / downhill face","Which side of the post the single flange sits on."]]],
+ ["Rails",[["Inside only","Only the rail on the wall side."],["Inside and outside","Wall rail plus an outside rail on each flight."],["Outside only","Only an outside rail, measured as its own rail."]]]];
+function glossary(){return el("div",{class:"gl"},GLOSS.map(([h,items])=>[el("h4",{text:h}),el("dl",null,items.map(([a,b])=>[el("dt",{text:a}),el("dd",{text:b})]))]))}
+function openGlossary(){if($("gsheet"))return;const close=()=>sh.remove();
+  const sh=el("div",{id:"gsheet",class:"gsheet",onclick:e=>{if(e.target===sh)close()}},el("div",{class:"gpanel",role:"dialog","aria-label":"What the codes mean"},
+    el("div",{class:"row",style:"justify-content:space-between"},el("h2",{text:"What the codes mean"}),el("button",{type:"button",class:"btn sm",text:"Close",onclick:close})),glossary()));
+  document.body.append(sh)}
+const codesBtn=()=>el("button",{type:"button",class:"btn codes",text:"? Codes",onclick:openGlossary});
 function newRail(){const last=Object.values(rails).sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""))[0];
   const r={id:uid(),job:last?last.job:"",name:"",hand:null,kind:null,layout:"cont",standoff:2.125,w:blankW(),rows:[],mp:[],out:{},createdBy:me,createdAt:new Date().toISOString()};
   rails[r.id]=r;save(r);view.mode="wiz";view.rail=r.id;view.i=0;view.sub=null;render();scrollTo(0,0)}
@@ -423,7 +440,7 @@ function wizard(A,r){
       body.append(el("div",{class:"lbl",text:"Standoff"}),keypad(m.standoff,v=>{if(v==null)delete m.standoff;else m.standoff=v;save(r)},{}));
     }
   }
-  if(st.type!=="choice"||view.sub||view.ret||st.get()!=null){nextBar.append(nextBtn);A.append(nextBar)}
+  nextBar.append(codesBtn());if(st.type!=="choice"||view.sub||view.ret||st.get()!=null)nextBar.append(nextBtn);else nextBar.append(el("div",{style:"flex:1"}));A.append(nextBar)
   upd();
 }
 function seg(opts,cur,on){const s=el("div",{class:"seg",role:"group"});opts.forEach(([v,t])=>s.append(el("button",{type:"button","aria-pressed":String(cur===v),text:t,onclick:()=>on(v)})));return s}
@@ -441,7 +458,7 @@ function reviewView(A,r,S,head){
     const lab=s.lab||(s.code&&s.type==="num"?s.code+" "+(s.q.startsWith("Distance")?"":s.q):s.id==="job"?"Job":s.id==="name"?"Stair":s.id==="hand"?"Hand up":s.id==="kind"?"Rails":s.id==="standoff"?"Standoff":s.q);
     list.append(el("button",{type:"button",class:s.done()?"":"miss",onclick:()=>jump(s.id)},el("span",{text:lab}),el("span",{text:s.sum?s.sum():String(s.get()??"—")})))});
   A.append(list);
-  A.append(el("div",{class:"next"},el("button",{type:"button",class:"btn pri",text:"Export "+(r.job||"job")+" JSON",disabled:!(r.job||"").trim(),onclick:()=>exportJob(r.job.trim())})));
+  A.append(el("div",{class:"next"},codesBtn(),el("button",{type:"button",class:"btn pri",text:"Export "+(r.job||"job")+" JSON",disabled:!(r.job||"").trim(),onclick:()=>exportJob(r.job.trim())})));
   A.append(el("div",{class:"row"},el("span",{class:"st",id:"st",text:status}),el("button",{type:"button",class:"btn sm ghost",text:"Copy JSON",onclick:()=>copyJob(r.job.trim())})));
   const del=el("div",{class:"row"});const sd=()=>{del.innerHTML="";del.append(el("button",{type:"button",class:"btn sm ghost",text:"Delete this rail",onclick:()=>{del.innerHTML="";del.append(el("span",{class:"muted",text:"Delete it?"}),el("button",{type:"button",class:"btn sm",text:"Delete",onclick:async()=>{await removeRail(r.id);view.mode="home";render()}}),el("button",{type:"button",class:"btn sm",text:"Keep",onclick:sd}))}}))};sd();A.append(del);
 }
