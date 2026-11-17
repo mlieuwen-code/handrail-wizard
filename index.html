@@ -100,7 +100,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
-const APP_VERSION="2026.11.17-f15c5c";
+const APP_VERSION="2026.11.17-36ee13";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -160,7 +160,7 @@ function check(r){
   const out=[],rows=r.rows;
   if(!(r.job||"").trim()||!(r.name||"").trim())out.push("Give the rail a job and a stair name.");
   if(!r.hand)out.push("Pick which hand the rail is on going up.");
-  if(!r.kind)out.push("Pick which rails: inside only, inside and outside, or outside only.");
+  if(!r.kind)out.push("Pick which rails: inside only, inside and outside, or outside/freehand.");
   if(!rows.length){out.push("No bottom start yet.");return out}
   if(!isEnd(rows[rows.length-1].to))out.push("The rail has no top end yet: on the last flight, pick End of rail.");
   rows.forEach((x,i)=>{const L=x.from+" → "+x.to+" (row "+(i+1)+")";
@@ -262,7 +262,7 @@ function steps(r){
   s.push({id:"job",sec:"Rail",type:"text",q:"Which job?",ph:"Job name",get:()=>r.job,set:v=>r.job=v,chips:true,done:()=>!!(r.job||"").trim(),sum:()=>r.job||"—"});
   s.push({id:"name",sec:"Rail",type:"text",q:"Which stair?",ph:"e.g. North stair",help:"Whatever the shop will know it by.",get:()=>r.name,set:v=>r.name=v,done:()=>!!(r.name||"").trim(),sum:()=>r.name||"—"});
   s.push({id:"hand",sec:"Rail",type:"choice",q:"Standing at the bottom looking up, which side is the rail on?",opts:[{v:"LHU",label:"Left hand",sub:"LH up"},{v:"RHU",label:"Right hand",sub:"RH up"}],cols:2,get:()=>r.hand,set:v=>r.hand=v,done:()=>!!r.hand,sum:()=>r.hand||"—"});
-  s.push({id:"kind",sec:"Rail",type:"choice",q:"Which rails?",opts:[{v:"inside",label:"Inside only"},{v:"inout",label:"Inside and outside"},{v:"outside",label:"Outside only",sub:"Measure the outside rail as its own rail"}],get:()=>r.kind,set:v=>r.kind=v,done:()=>!!r.kind,sum:()=>r.kind==="inout"?"Inside and outside":r.kind==="outside"?"Outside only":r.kind?"Inside only":"—"});
+  s.push({id:"kind",sec:"Rail",type:"choice",q:"Which rails?",opts:[{v:"inside",label:"Inside only"},{v:"inout",label:"Inside and outside"},{v:"outside",label:"Outside/Freehand",sub:"Measure any rail as its own rail"}],get:()=>r.kind,set:v=>r.kind=v,done:()=>!!r.kind,sum:()=>r.kind==="inout"?"Inside and outside":r.kind==="outside"?"Outside/Freehand":r.kind?"Inside only":"—"});
   s.push({id:"standoff",sec:"Rail",type:"choice",q:"Standoff, wall to pipe face",help:"Standard is 2 1/8\".",opts:[{v:2.125,label:'2 1/8"',sub:"Standard"},{v:"other",label:"Other"}],cols:2,
     get:()=>r.standoff===2.125?2.125:"other",set:v=>{if(v===2.125)r.standoff=2.125;else{r.standoff=r._so!=null?r._so:null;view.sub="so"}},noAdvance:v=>v==="other",done:()=>r.standoff!=null,sum:()=>frq(r.standoff)});
   s.push({id:"startEnd",sec:"Bottom",type:"choice",q:"What's at the bottom end?",opts:ENDOPT,cols:2,get:()=>w.start.end,set:v=>w.start.end=v,done:()=>!!w.start.end,sum:()=>w.start.end||"—"});
@@ -333,7 +333,7 @@ function home(A){
   if(!jobs.length)A.append(el("div",{class:"card"},el("p",{class:"muted",style:"margin:0",text:"No rails yet. Tap New rail and answer the questions as you walk up the stair. Swipe a rail left to delete it."})));
   jobs.forEach(j=>{const c=el("section",{class:"card"},el("div",{class:"row",style:"justify-content:space-between"},el("h2",{text:j}),j==="(no job)"?null:el("button",{type:"button",class:"btn sm pri",text:"Export job",onclick:()=>exportJob(j)})));
     by[j].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(r=>{normalize(r);const iss=check(r),fl=flights(r).length;
-      const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.hand||"?")+(r.kind==="inout"?" · in + out":r.kind==="outside"?" · outside only":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
+      const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.hand||"?")+(r.kind==="inout"?" · in + out":r.kind==="outside"?" · outside/freehand":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
       c.append(swipe(rb,()=>openRail(r),()=>delWithUndo(r)))});
     A.append(c)});
   A.append(el("details",{class:"card"},el("summary",{text:"What the codes mean"}),glossary()));
@@ -369,7 +369,7 @@ const GLOSS=[
  ["Measurements",[["Bottom tread height","g to bn: plumb, from the ground under the nose up to the bottom nose."],["n-n","Nose to nose: along the nose line, from the bn to the tn (tape laid on the noses)."],["Rise","Plumb height of the flight, from the bn straight up to the level of the tn."],["Run","Level distance of the flight, from the bn straight across to below the tn. Not entered; the builder works it out from the n-n and rise."],["Wall to g","rt → g / lt → g: from the wall to the bottom tread, under the nose."],["tn to wall","tn → rt / tn → lt: from the top nose to the wall."],["Between turns","rt → rt / lt → lt: turn to turn. On a switchback this is usually the wall thickness."],["Standoff","Wall to the face of the pipe. Standard is 2 1/8\"."],["Minus (−)","A distance going backwards, like a post set back on the tread instead of past the tn."],["Blank","Leaving a WR distance blank means no obstruction; the builder sets it."]]],
  ["Turns and landings",[["rt / lt","Turn right / left, standing on the stair looking up."],["LH up / RH up","Which hand the rail is on, standing at the bottom looking up."],["Square","A 90° corner."],["Protractor","Reading between the two walls: 180 = straight on, 90 = square."],["U-turn landing","180: two turns, the next flight comes back the other way (switchback)."],["Corner landing","90: one turn, the next flight goes off to the side."],["Straight landing","0: no turn, the next flight carries straight on."],["Studs o.c.","Stud spacing behind a wall return: 12, 16 (standard) or 24 on centre."]]],
  ["Posts",[["Top mount","Post stands on top of the tread or slab on a baseplate."],["Fascia","Post bolts to the face of the stringer or slab edge."],["Inside","Post mounts on the inside face."],["SF / DF","Single flange / double flange bracket."],["Uphill / downhill face","Which side of the post the single flange sits on."]]],
- ["Rails",[["Inside only","Only the rail on the wall side."],["Inside and outside","Wall rail plus an outside rail on each flight."],["Outside only","Only an outside rail, measured as its own rail."]]]];
+ ["Rails",[["Inside only","Only the rail on the wall side."],["Inside and outside","Wall rail plus an outside rail on each flight."],["Outside/Freehand","Any rail measured as its own rail, like an outside-only rail."]]]];
 function glossary(){return el("div",{class:"gl"},GLOSS.map(([h,items])=>[el("h4",{text:h}),el("dl",null,items.map(([a,b])=>[el("dt",{text:a}),el("dd",{text:b})]))]))}
 function openGlossary(){if($("gsheet"))return;const close=()=>sh.remove();
   const sh=el("div",{id:"gsheet",class:"gsheet",onclick:e=>{if(e.target===sh)close()}},el("div",{class:"gpanel",role:"dialog","aria-label":"What the codes mean"},
