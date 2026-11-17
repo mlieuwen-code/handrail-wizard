@@ -100,7 +100,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
-const APP_VERSION="2026.11.17-36ee13";
+const APP_VERSION="2026.11.17-9ce72a";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -326,12 +326,12 @@ async function removeRail(id){delete rails[id];delete dirty[id];lsSave();try{db&
 const view={mode:"home",rail:null,i:0,sub:null,ret:false};
 function render(){keyHandler=null;const A=$("app");A.innerHTML="";if(view.mode==="wiz"&&rails[view.rail])wizard(A,rails[view.rail]);else{view.mode="home";home(A)}}
 function home(A){
-  A.append(el("div",null,el("h1",{text:"Handrail wizard"}),el("p",{class:"muted",style:"margin:2px 0 0",text:"One question at a time, bottom of the stair up. Rails save on this phone; Export job shares the handrail builder's v3 JSON."})));
+  A.append(el("div",null,el("h1",{text:"Handrail wizard"}),el("p",{class:"muted",style:"margin:2px 0 0",text:"One question at a time, bottom of the stair up. Rails save on this phone. Send to office puts the job's JSON in Railings › JSON Files."})));
   A.append(el("div",{class:"row"},el("button",{type:"button",class:"btn pri",style:"flex:1",text:"+ New rail",onclick:newRail}),el("span",{class:"st",id:"st",text:status})));
   const by={};Object.values(rails).forEach(r=>{const j=(r.job||"").trim()||"(no job)";(by[j]=by[j]||[]).push(r)});
   const jobs=Object.keys(by).sort();
   if(!jobs.length)A.append(el("div",{class:"card"},el("p",{class:"muted",style:"margin:0",text:"No rails yet. Tap New rail and answer the questions as you walk up the stair. Swipe a rail left to delete it."})));
-  jobs.forEach(j=>{const c=el("section",{class:"card"},el("div",{class:"row",style:"justify-content:space-between"},el("h2",{text:j}),j==="(no job)"?null:el("button",{type:"button",class:"btn sm pri",text:"Export job",onclick:()=>exportJob(j)})));
+  jobs.forEach(j=>{const c=el("section",{class:"card"},el("div",{class:"row",style:"justify-content:space-between"},el("h2",{text:j}),j==="(no job)"?null:el("button",{type:"button",class:"btn sm pri",text:"Send to office",onclick:()=>exportJob(j)})));
     by[j].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(r=>{normalize(r);const iss=check(r),fl=flights(r).length;
       const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.hand||"?")+(r.kind==="inout"?" · in + out":r.kind==="outside"?" · outside/freehand":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
       c.append(swipe(rb,()=>openRail(r),()=>delWithUndo(r)))});
@@ -458,11 +458,11 @@ function reviewView(A,r,S,head){
     const lab=s.lab||(s.code&&s.type==="num"?s.code+" "+(s.q.startsWith("Distance")?"":s.q):s.id==="job"?"Job":s.id==="name"?"Stair":s.id==="hand"?"Hand up":s.id==="kind"?"Rails":s.id==="standoff"?"Standoff":s.q);
     list.append(el("button",{type:"button",class:s.done()?"":"miss",onclick:()=>jump(s.id)},el("span",{text:lab}),el("span",{text:s.sum?s.sum():String(s.get()??"—")})))});
   A.append(list);
-  A.append(el("div",{class:"next"},codesBtn(),el("button",{type:"button",class:"btn pri",text:"Export "+(r.job||"job")+" JSON",disabled:!(r.job||"").trim(),onclick:()=>exportJob(r.job.trim())})));
-  A.append(el("div",{class:"row"},el("span",{class:"st",id:"st",text:status}),el("button",{type:"button",class:"btn sm ghost",text:"Copy JSON",onclick:()=>copyJob(r.job.trim())})));
+  A.append(el("div",{class:"next"},codesBtn(),el("button",{type:"button",class:"btn pri",text:"Send "+(r.job||"job")+" to office",disabled:!(r.job||"").trim(),onclick:()=>exportJob(r.job.trim())})));
+  A.append(el("div",{class:"row"},el("span",{class:"st",id:"st",text:status}),el("button",{type:"button",class:"btn sm ghost",text:"Share file",onclick:()=>shareJob(r.job.trim())}),el("button",{type:"button",class:"btn sm ghost",text:"Copy JSON",onclick:()=>copyJob(r.job.trim())})));
   const del=el("div",{class:"row"});const sd=()=>{del.innerHTML="";del.append(el("button",{type:"button",class:"btn sm ghost",text:"Delete this rail",onclick:()=>{del.innerHTML="";del.append(el("span",{class:"muted",text:"Delete it?"}),el("button",{type:"button",class:"btn sm",text:"Delete",onclick:async()=>{await removeRail(r.id);view.mode="home";render()}}),el("button",{type:"button",class:"btn sm",text:"Keep",onclick:sd}))}}))};sd();A.append(del);
 }
-async function exportJob(job){
+async function shareJob(job){
   const p=payload(job),bad=Object.values(rails).filter(r=>(r.job||"").trim()===job&&check(r).length).length;
   const fname=job.replace(/[^\w\- ]+/g,"").trim()+" handrails v3.json",data=JSON.stringify(p,null,1);
   const note=bad?" · "+bad+" rail(s) still have issues":"";
@@ -471,6 +471,36 @@ async function exportJob(job){
   catch(e){if(e&&e.name==="AbortError")return}
   const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));const a=el("a",{href:url,download:fname});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);setSt("downloaded "+fname+note)
 }
+/* ---------- Send to office: the Google script saves the file into Railings › JSON Files ---------- */
+const API_URL="https://script.google.com/macros/s/AKfycbzfJwNBkDvCyr3_mzOfKA5q_bELUvgF2WyBoN8fEH86KNsbvvuhpJL575SkwAcsx3zj0A/exec";
+const PIN_KEY="ridgeway-crew-pin",OUTBOX="handrailWizard.outbox";   // same crew PIN as Rail Measure (same site, so it carries over)
+const getPin=()=>{try{return localStorage.getItem(PIN_KEY)||""}catch(e){return""}};
+const setPin=p=>{try{p?localStorage.setItem(PIN_KEY,p):localStorage.removeItem(PIN_KEY)}catch(e){}};
+const obGet=()=>{try{return JSON.parse(localStorage.getItem(OUTBOX)||"{}")}catch(e){return{}}};
+const obSet=o=>{try{localStorage.setItem(OUTBOX,JSON.stringify(o))}catch(e){}};
+function askPin(msg,then){if($("pinsheet"))return;const inp=el("input",{type:"text",inputmode:"numeric",autocomplete:"off",placeholder:"Crew PIN"});
+  const go=()=>{const p=inp.value.trim();if(!p)return;setPin(p);sh.remove();then&&then()};
+  const sh=el("div",{id:"pinsheet",class:"gsheet"},el("div",{class:"gpanel",role:"dialog"},el("h2",{text:"Crew PIN"}),el("p",{class:"muted",text:msg||"Enter the crew PIN once on this phone to send files to the office. It's the same PIN as Rail Measure."}),inp,
+    el("div",{class:"row",style:"margin-top:10px"},el("button",{type:"button",class:"btn pri",style:"flex:1",text:"Save PIN",onclick:go}),el("button",{type:"button",class:"btn",text:"Cancel",onclick:()=>sh.remove()}))));
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go()}});document.body.append(sh);setTimeout(()=>inp.focus(),50)}
+async function postJson(name,json){
+  const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"savejson",pin:getPin(),name,json})});
+  return r.json()}
+async function sendOut(){const ob=obGet(),names=Object.keys(ob);if(!names.length||!getPin()||!navigator.onLine)return;
+  for(const n of names){try{const res=await postJson(n,ob[n]);if(res&&res.ok){const o=obGet();if(o[n]===ob[n]){delete o[n];obSet(o)}setSt("sent "+n+" to the office")}
+    else if(res&&res.error==="bad pin"){setPin("");askPin("That PIN didn't work. Check it and try again.",sendOut);return}else{setSt("office didn't take "+n+": "+(res&&res.error||"no reply"),"err");return}}
+  catch(e){setSt("no signal: "+names.length+" file(s) waiting to send","err");return}}}
+async function exportJob(job){
+  const p=payload(job),bad=Object.values(rails).filter(r=>(r.job||"").trim()===job&&check(r).length).length;
+  const name=job.replace(/[^\w\- ]+/g,"").trim()+" handrails v3.json";
+  const ob=obGet();ob[name]=JSON.stringify(p,null,1);obSet(ob);
+  if(bad)setSt(bad+" rail(s) still have issues, sending anyway…","err");else setSt("sending…");
+  if(!getPin()){askPin(null,sendOut);return}
+  if(!navigator.onLine){setSt("no signal: will send when back online","err");return}
+  await sendOut()}
+addEventListener("online",()=>sendOut());
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sendOut()});
+addEventListener("load",()=>setTimeout(sendOut,2500));
 async function copyJob(job){try{await navigator.clipboard.writeText(JSON.stringify(payload(job),null,1));setSt("JSON copied")}catch(e){setSt("couldn't copy","err")}}
 
 /* ================= boot ================= */
