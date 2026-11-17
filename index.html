@@ -80,6 +80,10 @@ input[type=text]:focus{border-color:var(--accent)}
 .sw .del{position:absolute;right:0;top:0;bottom:0;width:96px;border:0;background:var(--bad);color:#fff;font:700 15px var(--f)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9;font-weight:600}
 .toast button{border:0;background:transparent;color:var(--accent);font-weight:800;padding:6px 8px}
+.upd{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 8px);max-width:540px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:10;font-weight:600}
+.upd button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:8px 14px;font-weight:800}
+.ver{text-align:center;font-size:13px;color:var(--muted);display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.ver button{border:0;background:transparent;color:var(--accent);font-weight:700;padding:6px}
 .st{font-size:12px;color:var(--muted)}.st.err{color:var(--bad)}
 .gl{font-size:15px;color:var(--muted);margin:8px 0 0}
 .gl dt{font-weight:800;color:var(--accent);float:left;width:60px}
@@ -91,6 +95,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
+const APP_VERSION="2026.11.17-0608ac";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -327,6 +332,7 @@ function home(A){
       c.append(swipe(rb,()=>openRail(r),()=>delWithUndo(r)))});
     A.append(c)});
   A.append(el("details",{class:"card"},el("summary",{text:"What the codes mean"}),glossary()));
+  A.append(el("div",{class:"ver"},el("span",{text:"Version "+APP_VERSION}),el("button",{type:"button",id:"chk",text:"Check for updates",onclick:()=>checkUpdate(true)})));
 }
 /* swipe left on a rail to show Delete */
 let openSw=null;
@@ -453,6 +459,23 @@ async function copyJob(job){try{await navigator.clipboard.writeText(JSON.stringi
 /* ================= boot ================= */
 lsLoad();Object.values(rails).forEach(r=>{if(!r.w)r.w=blankW()});render();
 setSt("saved on this phone");
+/* ---------- updater: compares this copy with version.json on GitHub ---------- */
+let updShown=false;
+async function checkUpdate(manual){
+  const b=$("chk");if(manual&&b)b.textContent="Checking…";
+  try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();
+    if(j.v&&j.v!==APP_VERSION){showUpdate(j.v);if(b)b.textContent="Update ready"}
+    else if(manual&&b){b.textContent="Up to date ✓";setTimeout(()=>{if($("chk"))$("chk").textContent="Check for updates"},2500)}}
+  catch(e){if(manual&&b){b.textContent="No signal, try later";setTimeout(()=>{if($("chk"))$("chk").textContent="Check for updates"},2500)}}
+}
+function showUpdate(v){if(updShown)return;updShown=true;
+  document.body.append(el("div",{class:"upd",role:"status"},el("span",{text:"Update ready"}),el("button",{type:"button",text:"Refresh",onclick:applyUpdate})))}
+async function applyUpdate(){flushAll();lsSave();
+  try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
+  try{const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(g=>g.update().catch(()=>{})))}catch(e){}
+  location.reload()}
+addEventListener("load",()=>setTimeout(()=>checkUpdate(false),1500));
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkUpdate(false)});
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 window.__t={rails,steps,toV3,derive,normalize,check,blankW,payload};
 })();
