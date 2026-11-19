@@ -138,7 +138,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
-const APP_VERSION="2026.11.19-f51eb0";
+const APP_VERSION="2026.11.19-68f373";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -416,7 +416,7 @@ const THEMES=[["auto","Auto","#edf1f6","#16384f","#1f8fc6"],["ridgeway","Ridgewa
   ["sun","Sunlight","#ffffff","#000000","#0050c8"],["hivis","Hi-Vis","#0d0d0d","#d4ff00","#d4ff00"],["wizard","Wizard","#150f29","#7b4ae2","#f5b301"],["classic","Classic","#f4f5f7","#e0661b","#e0661b"]];
 const DARK={night:1,hivis:1,wizard:1},THEME_KEY="handrailWizard.theme";
 const savedTheme=()=>{try{return localStorage.getItem(THEME_KEY)||"auto"}catch(e){return"auto"}};
-const mq=matchMedia("(prefers-color-scheme: dark)");
+const mq=window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false};
 function applyTheme(){const pick=savedTheme(),t=pick==="auto"?(mq.matches?"night":"ridgeway"):pick,h=document.documentElement;
   h.dataset.theme=t;if(DARK[t])h.dataset.dark="";else delete h.dataset.dark;
   const m=document.querySelector('meta[name=theme-color]');if(m)m.content=getComputedStyle(h).getPropertyValue("--bg").trim()||"#0f2233"}
