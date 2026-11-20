@@ -138,7 +138,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
-const APP_VERSION="2026.11.19-f8eeae";
+const APP_VERSION="2026.11.20-31d66d";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -544,10 +544,46 @@ function askPin(msg,then){if($("pinsheet"))return;const inp=el("input",{type:"te
 async function postJson(name,json){
   const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"savejson",pin:getPin(),name,json})});
   return r.json()}
-async function sendOut(){const ob=obGet(),names=Object.keys(ob);if(!names.length||!getPin()||!navigator.onLine)return;
-  for(const n of names){try{const res=await postJson(n,ob[n]);if(res&&res.ok){const o=obGet();if(o[n]===ob[n]){delete o[n];obSet(o)}markSent(n,ob[n]);setSt("sent "+n+" to the office");toastOk("✓ Sent "+n.replace(/ handrails v3\.json$/,"")+" to the office");if(view.mode==="home"||(view.mode==="wiz"&&steps(rails[view.rail])[view.i].type==="review"))render()}
-    else if(res&&res.error==="bad pin"){setPin("");askPin("That PIN didn't work. Check it and try again.",sendOut);return}else{setSt("office didn't take "+n+": "+(res&&res.error||"no reply"),"err");return}}
-  catch(e){setSt("no signal: "+names.length+" file(s) waiting to send","err");return}}}
+/* Before saving, ask the office folder which names are taken; if this one is, ask before replacing it. */
+const OKR="handrailWizard.replaceOk",ALIAS="handrailWizard.alias";
+const lsj=(k)=>{try{return JSON.parse(localStorage.getItem(k)||"{}")}catch(e){return{}}},lss=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let sending=false;
+async function listOffice(){const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"jsonlist",pin:getPin()})});return r.json()}
+function uniqueName(n,taken){const base=n.replace(/\.json$/i,"");for(let k=2;k<100;k++){const c=base+" ("+k+").json";if(!taken.has(c)&&!(c in obGet()))return c}return base+" "+Date.now()+".json"}
+function askReplace(n,info,taken){return new Promise(res=>{if($("repsheet")){res("later");return}
+  const when=info&&info.updated?new Date(info.updated).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
+  const alt=uniqueName(n,taken);const done=v=>{sh.remove();res(v)};
+  const sh=el("div",{id:"repsheet",class:"gsheet"},el("div",{class:"gpanel",role:"alertdialog","aria-label":"File already exists"},
+    el("h2",{text:"⚠ Already in JSON Files"}),
+    el("p",{style:"margin:6px 0 2px"},el("b",{text:n})),
+    el("p",{class:"muted",style:"margin:0 0 12px",text:"There's already a file with this name in Railings › JSON Files"+(when?" (last saved "+when+")":"")+". Replacing it puts the old one in the Drive trash."}),
+    el("div",{style:"display:flex;flex-direction:column;gap:8px"},
+      el("button",{type:"button",class:"btn pri",text:"Replace it",onclick:()=>done("replace")}),
+      el("button",{type:"button",class:"btn",text:"Save a new copy: “"+alt.replace(/ handrails v3/,"").replace(/\.json$/,"")+"”",onclick:()=>done({rename:alt})}),
+      el("button",{type:"button",class:"btn ghost",text:"Don't send",onclick:()=>done("cancel")}))));
+  document.body.append(sh)})}
+async function sendOut(){if(sending)return;const ob0=obGet();if(!Object.keys(ob0).length||!getPin()||!navigator.onLine)return;
+  sending=true;try{
+  let list;try{list=await listOffice()}catch(e){setSt("no signal: "+Object.keys(ob0).length+" file(s) waiting to send","err");return}
+  if(list&&list.error==="bad pin"){setPin("");askPin("That PIN didn't work. Check it and try again.",sendOut);return}
+  const files=(list&&list.ok&&list.files)||[],taken=new Set(files.map(f=>f.name)),info=Object.fromEntries(files.map(f=>[f.name,f]));
+  for(let n of Object.keys(obGet())){let ob=obGet();const json=ob[n];if(json==null)continue;
+    const okr=lsj(OKR);
+    if(taken.has(n)&&!okr[n]){
+      if(document.visibilityState!=="visible")return;                 // ask next time the app is open
+      const a=await askReplace(n,info[n],taken);
+      if(a==="later")return;
+      if(a==="cancel"){ob=obGet();delete ob[n];obSet(ob);const al=lsj(ALIAS);delete al[n];lss(ALIAS,al);setSt("not sent: "+n);render();continue}
+      if(a&&a.rename){ob=obGet();delete ob[n];ob[a.rename]=json;obSet(ob);const al=lsj(ALIAS);al[a.rename]=al[n]||n;delete al[n];lss(ALIAS,al);n=a.rename}
+      else{okr[n]=1;lss(OKR,okr)}}
+    try{const res=await postJson(n,json);
+      if(res&&res.ok){const o=obGet();if(o[n]===json){delete o[n];obSet(o)}const al=lsj(ALIAS),orig=al[n]||n;delete al[n];lss(ALIAS,al);const k=lsj(OKR);delete k[n];lss(OKR,k);
+        markSent(orig,json);taken.add(n);setSt("sent "+n+" to the office");toastOk("✓ Sent "+n.replace(/ handrails v3/,"").replace(/\.json$/,"")+" to the office");
+        if(view.mode==="home"||(view.mode==="wiz"&&steps(rails[view.rail])[view.i].type==="review"))render()}
+      else if(res&&res.error==="bad pin"){setPin("");askPin("That PIN didn't work. Check it and try again.",sendOut);return}
+      else{setSt("office didn't take "+n+": "+(res&&res.error||"no reply"),"err");return}}
+    catch(e){setSt("no signal: "+Object.keys(obGet()).length+" file(s) waiting to send","err");return}}
+  }finally{sending=false}}
 const SENT="handrailWizard.sent";
 const hashStr=t=>{let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return String(h)};
 const jobName=job=>job.replace(/[^\w\- ]+/g,"").trim()+" handrails v3.json";
@@ -560,7 +596,7 @@ function toastOk(t){document.querySelectorAll(".toast").forEach(x=>x.remove());c
 async function exportJob(job){
   const p=payload(job),bad=Object.values(rails).filter(r=>(r.job||"").trim()===job&&check(r).length).length;
   const name=job.replace(/[^\w\- ]+/g,"").trim()+" handrails v3.json";
-  const ob=obGet();ob[name]=JSON.stringify(p,null,1);obSet(ob);
+  const ob=obGet();ob[name]=JSON.stringify(p,null,1);obSet(ob);{const k=lsj(OKR);delete k[name];lss(OKR,k)}
   if(bad)setSt(bad+" rail(s) still have issues, sending anyway…","err");else setSt("sending…");
   if(!getPin()){askPin(null,sendOut);return}
   if(!navigator.onLine){setSt("no signal: will send when back online","err");render();return}
