@@ -122,6 +122,7 @@ html[data-theme=sun] .btn,html[data-theme=sun] .opt,html[data-theme=sun] input[t
 html[data-theme=sun] .kp button,html[data-theme=sun] .fr button{border:2px solid #000}
 html[data-theme=sun] body{font-size:17px}
 html[data-theme=sun] .q{font-weight:900}
+.top .home{background:var(--pri-bg);border-color:var(--pri);color:var(--pri-ink)}
 .st{font-size:12px;color:var(--muted)}.st.err{color:var(--bad)}
 .gl{font-size:15px;color:var(--muted);margin:8px 0 0}
 .gl h4{font:700 12px var(--f);text-transform:uppercase;letter-spacing:.08em;color:var(--ink);margin:14px 0 6px}
@@ -138,7 +139,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
-const APP_VERSION="2026.11.20-31d66d";
+const APP_VERSION="2026.11.20-b2ef1a";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -440,14 +441,15 @@ function newRail(){const last=Object.values(rails).sort((a,b)=>(b.updatedAt||"")
 function openRail(r){if(!r.w)r.w=blankW();const S=steps(r);let i=S.findIndex(s=>!s.done());if(i<0)i=S.length-1;view.mode="wiz";view.rail=r.id;view.i=i;view.sub=null;view.ret=false;render();scrollTo(0,0)}
 function goNext(){const r=rails[view.rail];if(!r)return;const S=steps(r);
   if(view.ret){view.ret=false;view.i=S.length-1}else view.i=Math.min(view.i+1,S.length-1);view.sub=null;save(r);render();scrollTo(0,0)}
+function goHome(){const r=rails[view.rail];if(r){if(!(r.name||"").trim()&&!(r.w&&r.w.start&&r.w.start.end)){removeRail(r.id)}else save(r)}keyHandler=null;view.mode="home";view.rail=null;view.sub=null;view.ret=false;render();scrollTo(0,0)}
 function goBack(){const r=rails[view.rail];if(view.sub){view.sub=null;render();return}if(view.i===0){view.mode="home";save(r);render();return}view.i--;view.ret=false;render();scrollTo(0,0)}
 function jump(id,fwd){const r=rails[view.rail],S=steps(r),i=S.findIndex(s=>s.id===id);if(i>=0){view.i=i;view.ret=!fwd;view.sub=null;render();scrollTo(0,0)}}
 
 function wizard(A,r){
   const S=steps(r);if(view.i>=S.length)view.i=S.length-1;const st=S[view.i];
   const doneN=S.filter(s=>s.done()).length;
-  A.append(el("div",{class:"top"},el("button",{type:"button",class:"btn sm",text:"‹ Back",onclick:goBack}),el("div",{class:"prog","aria-label":"Progress"},el("i",{style:"width:"+Math.round(100*doneN/S.length)+"%"})),
-    el("button",{type:"button",class:"btn sm",text:st.type==="review"?"All rails":"Review",onclick:()=>{if(st.type==="review"){save(r);view.mode="home";render()}else jump("review")}})));
+  A.append(el("div",{class:"top"},el("button",{type:"button",class:"btn sm home","aria-label":"Start page",text:"⌂ Home",onclick:goHome}),el("button",{type:"button",class:"btn sm",text:"‹ Back",onclick:goBack}),el("div",{class:"prog","aria-label":"Progress"},el("i",{style:"width:"+Math.round(100*doneN/S.length)+"%"})),
+    st.type==="review"?null:el("button",{type:"button",class:"btn sm",text:"Review",onclick:()=>jump("review")})));
   const head=el("div",null,el("div",{class:"lbl",text:(r.name?r.name+" · ":"")+st.sec}));
   if(st.type==="review"){reviewView(A,r,S,head);return}
   derive(r);
