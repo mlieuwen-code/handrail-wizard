@@ -139,7 +139,7 @@ details.card summary{font-weight:700;cursor:pointer}
 <body><div class="wrap" id="app"></div>
 <script>
 (function(){"use strict";
-const APP_VERSION="2026.11.20-b2ef1a";
+const APP_VERSION="2026.11.24-3b9b6a";
 const $=id=>document.getElementById(id);
 const el=(t,a,...k)=>{const e=document.createElement(t);if(a)for(const[x,y]of Object.entries(a)){if(x==="class")e.className=y;else if(x==="text")e.textContent=y;else if(x==="html")e.innerHTML=y;else if(x.startsWith("on"))e.addEventListener(x.slice(2),y);else if(y!==undefined&&y!==null&&y!==false)e.setAttribute(x,y===true?"":y)}k.flat(9).forEach(c=>{if(c!=null&&c!==false)e.append(c.nodeType?c:document.createTextNode(c))});return e};
 const ENDS=["WR","BP","CP","O"],isEnd=c=>ENDS.includes(c),isTurn=c=>c==="rt"||c==="lt";
@@ -225,6 +225,7 @@ function toV3(r){
   const mps=(r.mp||[]).filter(m=>m.fromBn!=null&&m.dropFromTn!=null).map(m=>postOut(m,{flight:m.flight,fromBn:m.fromBn,dropFromTn:m.dropFromTn}));
   if(mps.length)rail.midPosts=mps;
   const list=[rail];
+  if(r.kind==="outside"&&r.both){const m=JSON.parse(JSON.stringify(rail));m.id=r.id+"-rh";m.hand="RHU";rail.name=rail.name+" LH";m.name=m.name+" RH";list.push(m)}
   if(r.kind==="inout")flights(r).forEach((_,k)=>{const f=k+1,o=(r.out||{})[f]||{mode:"standard"};if(o.mode==="none")return;
     const or={version:3,id:r.id+"-out"+f,job:rail.job,name:rail.name,hand:r.hand==="RHU"?"LHU":"RHU",side:"outside",outsideOf:r.id,flight:f,standard:true};
     if(o.mode==="obstruction"){if(o.botLen!=null)or.bottom={kind:"obstruction",len:o.botLen,end:o.botEnd||"WR"};if(o.topLen!=null)or.top={kind:"obstruction",len:o.topLen,end:o.topEnd||"WR"};if(or.bottom||or.top)or.standard=false}
@@ -300,8 +301,8 @@ function steps(r){
   normalize(r);const w=r.w,s=[];
   s.push({id:"job",sec:"Rail",type:"text",q:"Which job?",ph:"Job name",get:()=>r.job,set:v=>r.job=v,chips:true,done:()=>!!(r.job||"").trim(),sum:()=>r.job||"—"});
   s.push({id:"name",sec:"Rail",type:"text",q:"Which stair?",ph:"e.g. North stair",help:"Whatever the shop will know it by.",get:()=>r.name,set:v=>r.name=v,done:()=>!!(r.name||"").trim(),sum:()=>r.name||"—"});
-  s.push({id:"hand",sec:"Rail",type:"choice",q:"Standing at the bottom looking up, which side is the rail on?",opts:[{v:"LHU",label:"Left hand",sub:"LH up"},{v:"RHU",label:"Right hand",sub:"RH up"}],cols:2,get:()=>r.hand,set:v=>r.hand=v,done:()=>!!r.hand,sum:()=>r.hand||"—"});
-  s.push({id:"kind",sec:"Rail",type:"choice",q:"Which rails?",opts:[{v:"inside",label:"Inside only"},{v:"inout",label:"Inside and outside"},{v:"outside",label:"Outside/Freehand",sub:"Measure any rail as its own rail"}],get:()=>r.kind,set:v=>r.kind=v,done:()=>!!r.kind,sum:()=>r.kind==="inout"?"Inside and outside":r.kind==="outside"?"Outside/Freehand":r.kind?"Inside only":"—"});
+  s.push({id:"kind",sec:"Rail",type:"choice",q:"Which rails?",opts:[{v:"inside",label:"Inside only"},{v:"inout",label:"Inside and outside"},{v:"outside",label:"Outside/Freehand",sub:"Measure any rail as its own rail"}],get:()=>r.kind,set:v=>{r.kind=v;if(v!=="outside")delete r.both},done:()=>!!r.kind,sum:()=>r.kind==="inout"?"Inside and outside":r.kind==="outside"?"Outside/Freehand":r.kind?"Inside only":"—"});
+  s.push({id:"hand",sec:"Rail",type:"choice",q:"Standing at the bottom looking up, which side is the rail on?",opts:[{v:"LHU",label:"Left hand",sub:"LH up"},{v:"RHU",label:"Right hand",sub:"RH up"}].concat(r.kind==="outside"?[{v:"both",label:"Both sides",sub:"LH + RH matching: measure once, get both"}]:[]),cols:2,get:()=>r.both?"both":r.hand,set:v=>{if(v==="both"){r.hand="LHU";r.both=true}else{r.hand=v;delete r.both}},done:()=>!!r.hand,sum:()=>r.both?"LH + RH matching":r.hand||"—"});
   s.push({id:"standoff",sec:"Rail",type:"choice",q:"Standoff, wall to pipe face",help:"Standard is 2 1/8\".",opts:[{v:2.125,label:'2 1/8"',sub:"Standard"},{v:"other",label:"Other"}],cols:2,
     get:()=>r.standoff===2.125?2.125:"other",set:v=>{if(v===2.125)r.standoff=2.125;else{r.standoff=r._so!=null?r._so:null;view.sub="so"}},noAdvance:v=>v==="other",done:()=>r.standoff!=null,sum:()=>frq(r.standoff)});
   s.push({id:"startEnd",sec:"Bottom",type:"choice",q:"What's at the bottom end?",opts:ENDOPT,cols:2,get:()=>w.start.end,set:v=>w.start.end=v,done:()=>!!w.start.end,sum:()=>w.start.end||"—"});
@@ -374,7 +375,7 @@ function home(A){
   if(!jobs.length)A.append(el("div",{class:"card"},el("p",{class:"muted",style:"margin:0",text:"No rails yet. Tap New rail and answer the questions as you walk up the stair. Swipe a rail left to delete it."})));
   jobs.forEach(j=>{const c=el("section",{class:"card"},el("div",{class:"row",style:"justify-content:space-between"},el("h2",{text:j}),j==="(no job)"?null:sendBtn(j,"btn sm","Send to office")));
     by[j].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(r=>{normalize(r);const iss=check(r),fl=flights(r).length;
-      const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.hand||"?")+(r.kind==="inout"?" · in + out":r.kind==="outside"?" · outside/freehand":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
+      const rb=el("button",{type:"button",class:"rl"},el("b",{text:(r.name||"(no stair)")+" · "+(r.both?"LH + RH":(r.hand||"?"))+(r.kind==="inout"?" · in + out":r.kind==="outside"?" · outside/freehand":"")}),el("span",{class:"chip "+(iss.length?"no":"ok"),text:iss.length?iss.length+" to fix":"ready"}),el("small",{text:fl+" flight"+(fl===1?"":"s")}));
       c.append(swipe(rb,()=>openRail(r),()=>delWithUndo(r)))});
     A.append(c)});
   A.append(el("details",{class:"card"},el("summary",{text:"What the codes mean"}),glossary()));
